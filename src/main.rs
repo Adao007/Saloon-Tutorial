@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
-pub mod game;
-pub mod player;
+use gameplay::gameplay::GameplayPlugin;
+
+mod gameplay;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, TilemapPlugin, game::game::GamePlugin))
+        .add_plugins((DefaultPlugins, TilemapPlugin, GameplayPlugin))
         .run();
 }

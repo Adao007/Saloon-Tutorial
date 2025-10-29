@@ -1,4 +1,4 @@
-use super::setup::*;
+use super::player::Player; 
 use bevy::prelude::*;
 
 const CAMERA_DECAY_RATE: f32 = 2.;

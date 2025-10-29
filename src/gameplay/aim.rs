@@ -1,13 +1,6 @@
 use bevy::prelude::*;
 
-pub struct AimPlugin;
-impl Plugin for AimPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, mouse_position);
-    }
-}
-
-fn mouse_position(q_window: Query<&Window>, q_camera: Query<(&Camera, &GlobalTransform)>) {
+pub fn get_mouse_position(q_window: Query<&Window>, q_camera: Query<(&Camera, &GlobalTransform)>) {
     let (camera, camera_transform) = q_camera.single().unwrap();
     let window = q_window.single().unwrap();
 

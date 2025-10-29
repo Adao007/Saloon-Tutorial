@@ -1,17 +1,9 @@
-use super::setup::*;
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
 const MAP_LENGTH: u32 = 8;
 
-pub struct WorldPlugin;
-impl Plugin for WorldPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (init_camera, init_environment));
-    }
-}
-
-fn init_environment(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn init_environment(mut commands: Commands, asset_server: Res<AssetServer>) {
     let texture_handle: Handle<Image> = asset_server.load("dirt.png");
     let map_size = TilemapSize { x: 32, y: 16 };
     let tilemap_entity = commands.spawn_empty().id();

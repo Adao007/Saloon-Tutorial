@@ -1,8 +1,10 @@
 use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
+use super::player::Player; 
 
-#[derive(Component)]
-pub struct Player;
+pub fn init_camera(mut commands: Commands) {
+    commands.spawn(Camera2d);
+}
 
 pub fn spawn_player(
     mut commands: Commands,
