@@ -1,6 +1,6 @@
+use super::player::Player;
 use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
-use super::player::Player; 
 
 pub fn init_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -13,7 +13,11 @@ pub fn spawn_player(
 ) {
     commands.spawn((
         Player,
-        Mesh2d(meshes.add(Circle::new(35.0))),
+        Mesh2d(meshes.add(Triangle2d::new(
+            Vec2::new(0.0, 20.0),
+            Vec2::new(-20.0, -20.0),
+            Vec2::new(20.0, -20.0),
+        ))),
         MeshMaterial2d(materials.add(Color::from(RED))),
         Transform::from_xyz(0.0, 0.0, 1.0),
     ));

@@ -1,8 +1,23 @@
-use bevy::prelude::*; 
-use super::player::Player; 
+use super::{aim::MousePos, player::Player};
+use bevy::prelude::*;
 
-fn walk(
-    player_query: Query<&mut Transform, With<Player>>
+pub fn walk(
+    player_query: Single<(&Player, &mut Transform)>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mouse_pos: Res<MousePos>,
 ) {
+    let (player, mut transform) = player_query.into_inner();
 
+    if keyboard_input.pressed(KeyCode::KeyW) {
+        transform.translation.y += 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::KeyS) {
+        transform.translation.y -= 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::KeyA) {
+        transform.translation.x -= 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::KeyD) {
+        transform.translation.x += 1.0;
+    }
 }
