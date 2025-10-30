@@ -4,7 +4,7 @@ use bevy_ecs_tilemap::prelude::*;
 const MAP_LENGTH: u32 = 8;
 
 pub fn init_environment(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let texture_handle: Handle<Image> = asset_server.load("dirt.png");
+    let texture_handle: Handle<Image> = asset_server.load("floor.png");
     let map_size = TilemapSize { x: 32, y: 16 };
     let tilemap_entity = commands.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(map_size);
@@ -23,7 +23,7 @@ pub fn init_environment(mut commands: Commands, asset_server: Res<AssetServer>) 
         }
     }
 
-    let tile_size = TilemapTileSize { x: 100.0, y: 100.0 };
+    let tile_size = TilemapTileSize { x: 150.0, y: 150.0 };
     let grid_size = tile_size.into();
     let map_type = TilemapType::default();
 
