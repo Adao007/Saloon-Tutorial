@@ -1,4 +1,4 @@
-use super::{aim::*, camera::*, movement::*, setup::*, world::*};
+use super::{aim::*, camera::*, health::*, movement::*, setup::*, stamina::*, world::*};
 use bevy::prelude::*;
 
 pub struct GameplayPlugin;
@@ -14,7 +14,11 @@ impl Plugin for GameplayPlugin {
                 update_camera,
                 get_mouse_position,
                 rotate_aim.after(get_mouse_position),
-                walk,
+                movement,
+                run,
+                update_stamina,
+                update_health,
+                restore_stamina,
             ),
         );
     }
