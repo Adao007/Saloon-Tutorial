@@ -1,4 +1,7 @@
-use super::player::Player;
+use super::{
+    health::*,
+    player::Player,
+};
 use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
 
@@ -11,8 +14,9 @@ pub fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    commands.spawn((
+    let player = commands.spawn((
         Player,
+        Health{ max: 100.0, current: 100.0 },
         Mesh2d(meshes.add(Triangle2d::new(
             Vec2::new(0.0, 20.0),
             Vec2::new(-20.0, -20.0),
@@ -20,5 +24,29 @@ pub fn spawn_player(
         ))),
         MeshMaterial2d(materials.add(Color::from(RED))),
         Transform::from_xyz(0.0, 0.0, 1.0),
-    ));
+    )).id();
+
+    // Spawn Health Bar for Player
+    commands.spawn((
+        Node {
+            width: Val::Px(200.0),
+            height: Val::Px(20.0), 
+            border: UiRect::all(Val::Px(2.0)), 
+            ..default()
+        }, 
+        BackgroundColor(Color::srgba(0.3, 0.3, 0.3, 0.9)), 
+        BorderColor::all(Color::BLACK),
+    )).with_children(|parent|{ 
+        parent.spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0), 
+                ..default()
+            }, 
+            BackgroundColor(Color::srgb(0.8, 0.2, 0.2)), 
+            HealthBar { entity: player },
+        ));
+    });
+    
 }
+

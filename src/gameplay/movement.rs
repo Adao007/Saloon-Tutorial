@@ -2,11 +2,10 @@ use super::{aim::MousePos, player::Player};
 use bevy::prelude::*;
 
 pub fn walk(
-    player_query: Single<(&Player, &mut Transform)>,
+    player_query: Single<&mut Transform, With<Player>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mouse_pos: Res<MousePos>,
 ) {
-    let (player, mut transform) = player_query.into_inner();
+    let mut transform = player_query.into_inner();
 
     if keyboard_input.pressed(KeyCode::KeyW) {
         transform.translation.y += 1.0;
