@@ -16,6 +16,7 @@ impl Plugin for GameplayPlugin {
                 rotate_aim.after(get_mouse_position),
                 movement,
                 run,
+                apply_velocity,
                 update_stamina,
                 update_health,
                 restore_stamina,

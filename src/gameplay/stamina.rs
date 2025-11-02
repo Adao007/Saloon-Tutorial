@@ -1,6 +1,8 @@
 use bevy::prelude::*; 
 use super::player::Player; 
 
+const REGEN: f32 = 0.15;
+
 #[derive(Component)]
 pub struct Stamina{
     pub max: f32,
@@ -11,6 +13,8 @@ pub struct Stamina{
 pub struct StaminaBar {
     pub entity: Entity,
 }
+
+
 
 pub fn update_stamina(
     stamina_query: Query<&Stamina>, 
@@ -33,5 +37,5 @@ pub fn restore_stamina(
         return; 
     }
 
-    stamina.current += 0.05; 
+    stamina.current += REGEN; 
 }
