@@ -7,7 +7,10 @@ impl Plugin for GameplayPlugin {
         app.insert_resource(MousePos {
             position: Vec2::new(0.0, 0.0),
         })
-        .add_systems(Startup, (init_camera, init_environment, spawn_player))
+        .add_systems(
+            Startup,
+            (init_camera, init_environment, spawn_player, spawn_objects),
+        )
         .add_systems(
             Update,
             (

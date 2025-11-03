@@ -3,6 +3,42 @@ use bevy_ecs_tilemap::prelude::*;
 
 const MAP_LENGTH: u32 = 8;
 
+#[derive(Component)]
+pub struct Obstacle {
+    pub vertices: Vec<Vec2>,
+}
+
+impl Obstacle {
+    pub fn rectangle(width: f32, height: f32) -> Self {
+        let half_w = width / 2.0;
+        let half_h = height / 2.0;
+        Obstacle {
+            vertices: vec![
+                Vec2::new(-half_w, -half_h),
+                Vec2::new(half_w, -half_h),
+                Vec2::new(half_w, half_h),
+                Vec2::new(-half_w, half_h),
+            ],
+        }
+    }
+
+    pub fn circle(radius: f32, segments: usize) -> Self {
+        let mut vertices = Vec::new();
+        for i in 0..segments {
+            let angle = (i as f32 / segments as f32) * std::f32::consts::TAU;
+            vertices.push(Vec2::new(angle.cos() * radius, angle.sin() * radius));
+        }
+        Obstacle { vertices }
+    }
+}
+
+#[derive(Component)]
+pub struct Fog {
+    pub discovered: bool,
+    pub visible: bool,
+    pub original: Color,
+}
+
 pub fn init_environment(mut commands: Commands, asset_server: Res<AssetServer>) {
     let texture_handle: Handle<Image> = asset_server.load("floor.png");
     let map_size = TilemapSize { x: 32, y: 16 };
