@@ -23,6 +23,9 @@ impl Plugin for GameplayPlugin {
                 update_stamina,
                 update_health,
                 restore_stamina,
+                update_fog,
+                apply_fog_visuals,
+                draw_visibility,
             ),
         );
     }

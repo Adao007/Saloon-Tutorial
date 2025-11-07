@@ -40,9 +40,9 @@ pub fn spawn_player(
             Transform::from_xyz(0.0, 0.0, 1.0),
             Velocity { linvel: Vec3::ZERO },
             VisibilityCone {
-                range: 10.0,
-                angle: std::f32::consts::TAU,
-                direction: Vec2::new(1.0, 1.0),
+                range: 1000.0,
+                angle: 90.0_f32.to_radians(),
+                direction: Vec2::new(0.0, 1.0),
             },
         ))
         .id();
@@ -102,15 +102,21 @@ pub fn spawn_objects(mut commands: Commands) {
     spawn_wall(
         &mut commands,
         Vec3::new(50.0, 0.0, 2.0),
-        Vec2::new(10.0, 100.0),
+        Vec2::new(50.0, 500.0),
         Color::srgb(0.4, 0.4, 0.4),
     );
 
     spawn_item(
         &mut commands,
-        Vec3::new(-1.0, 1.0, 2.0),
+        Vec3::new(200.0, 1.0, 2.0),
         Color::srgb(1.0, 1.0, 0.0),
-    )
+    );
+
+    spawn_item(
+        &mut commands,
+        Vec3::new(-200.0, 1.0, 2.0),
+        Color::srgb(1.0, 1.0, 0.0),
+    );
 }
 
 fn spawn_wall(commands: &mut Commands, position: Vec3, size: Vec2, color: Color) {
@@ -135,7 +141,7 @@ fn spawn_item(commands: &mut Commands, position: Vec3, color: Color) {
         },
         Sprite {
             color: Color::srgba(0.0, 0.0, 0.0, 0.0),
-            custom_size: Some(Vec2::new(10.0, 10.0)),
+            custom_size: Some(Vec2::new(80.0, 80.0)),
             ..default()
         },
         Transform::from_translation(position),
