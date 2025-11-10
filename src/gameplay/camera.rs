@@ -1,4 +1,4 @@
-use super::player::Player; 
+use crate::gameplay::player::player::Player; 
 use bevy::prelude::*;
 
 const CAMERA_DECAY_RATE: f32 = 2.;

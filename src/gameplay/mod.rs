@@ -1,9 +1,6 @@
-pub mod aim;
 pub mod camera;
-pub mod health;
 pub mod gameplay;
-pub mod movement;
+pub mod inventory;
 pub mod player;
 pub mod setup; 
-pub mod stamina;
 pub mod world; 

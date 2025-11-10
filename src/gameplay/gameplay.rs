@@ -1,4 +1,5 @@
-use super::{aim::*, camera::*, health::*, movement::*, setup::*, stamina::*, world::*};
+use crate::gameplay::player::{aim::*, health::*, movement::*, stamina::*, };
+use super::{camera::*, setup::*, world::*};
 use bevy::prelude::*;
 
 pub struct GameplayPlugin;

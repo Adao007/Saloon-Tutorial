@@ -1,4 +1,5 @@
-use super::{aim::*, health::*, movement::*, player::Player, stamina::*, world::*};
+use crate::gameplay::player::{aim::*, health::*, movement::*, player::Player, stamina::*};
+use super::{ world::*};
 use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
 
@@ -102,7 +103,14 @@ pub fn spawn_objects(mut commands: Commands) {
     spawn_wall(
         &mut commands,
         Vec3::new(50.0, 0.0, 2.0),
-        Vec2::new(50.0, 500.0),
+        Vec2::new(10.0, 500.0),
+        Color::srgb(0.4, 0.4, 0.4),
+    );
+
+    spawn_wall(
+        &mut commands,
+        Vec3::new(500.0, 0.0, 2.0),
+        Vec2::new(10.0, 500.0),
         Color::srgb(0.4, 0.4, 0.4),
     );
 

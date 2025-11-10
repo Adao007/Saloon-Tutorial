@@ -1,7 +1,5 @@
-use super::{
-    player::Player,
-    world::{Fog, Obstacle},
-};
+use crate::gameplay::world::{Fog, Obstacle};
+use super::{player::Player};
 use bevy::prelude::*;
 
 #[derive(Resource)]
