@@ -1,0 +1,16 @@
+(
+    name: "Six Shooter", 
+    item_type: "Equipment",
+    description: "A small gun with a slow reload, on account of you having to reload each bullet one at a time.",
+    max_stack: 1, 
+    shape: Grid(
+        width: 2, 
+        height: 2,
+        pattern: [
+            [1, 1],
+            [1, 0],
+        ],    
+    ),
+    rotate: true, 
+    icon: "icons/six_shooter.png",
+)

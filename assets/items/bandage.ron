@@ -1,0 +1,15 @@
+(
+    name: "Bandage",
+    item_type: "Consumable",
+    description: "Gauze roll bandage used for small amounts of healing. The white cloth spotted with red has always comforted you.",
+    max_stack: 5,
+    shape: Grid(
+        width: 1,
+        height: 1,
+        pattern: [
+            [1], 
+        ],
+    ),
+    rotate: false, 
+    icon: "icons/bandage.png", 
+)
