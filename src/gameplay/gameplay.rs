@@ -1,4 +1,7 @@
-use crate::gameplay::player::{aim::*, health::*, movement::*, stamina::*, };
+use crate::gameplay::{
+    player::{aim::*, health::*, movement::*, stamina::*, },
+    inventory::{items::*},
+};
 use super::{camera::*, setup::*, world::*};
 use bevy::prelude::*;
 
@@ -8,6 +11,8 @@ impl Plugin for GameplayPlugin {
         app.insert_resource(MousePos {
             position: Vec2::new(0.0, 0.0),
         })
+        .add_message::<PickUpMessage>()
+        .add_plugins(ItemsPlugin)
         .add_systems(
             Startup,
             (init_camera, init_environment, spawn_player, spawn_objects),

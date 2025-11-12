@@ -6,7 +6,7 @@ use bevy::prelude::*;
 const WALK_SPEED: f32 = 85.0;
 
 #[derive(Component)]
-pub struct Item;
+pub struct Object;
 
 pub fn init_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -141,7 +141,7 @@ fn spawn_wall(commands: &mut Commands, position: Vec3, size: Vec2, color: Color)
 
 fn spawn_item(commands: &mut Commands, position: Vec3, color: Color) {
     commands.spawn((
-        Item,
+        Object,
         Fog {
             discovered: false,
             visible: false,
