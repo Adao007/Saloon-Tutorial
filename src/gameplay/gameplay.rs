@@ -11,7 +11,7 @@ impl Plugin for GameplayPlugin {
         app.insert_resource(MousePos {
             position: Vec2::new(0.0, 0.0),
         })
-        .add_message::<PickUpMessage>()
+        .add_message::<PickupMessage>()
         .add_plugins(ItemsPlugin)
         .add_systems(
             Startup,
