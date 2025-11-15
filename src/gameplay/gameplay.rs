@@ -1,6 +1,6 @@
 use crate::gameplay::{
     player::{aim::*, health::*, movement::*, stamina::*, },
-    inventory::{items::*},
+    inventory::{items::*, pickup::*},
 };
 use super::{camera::*, setup::*, world::*};
 use bevy::prelude::*;

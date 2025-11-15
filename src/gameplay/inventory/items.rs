@@ -1,19 +1,15 @@
 use std::sync::OnceLock;
 use bevy::{prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
-use crate::gameplay::player::{
-    aim::{MousePos, get_mouse_position},
-    player::Player,
-};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use super::inventory::*;
+use super::pickup::{PickupPlugin, Litter}; 
 
 pub struct ItemsPlugin; 
 impl Plugin for ItemsPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugins(RonAssetPlugin::<ItemDefinition>::new(&[".ron"]))
+            .add_plugins(PickupPlugin)
             .add_systems(Startup, spawn_bandage);
     }
 }
@@ -143,36 +139,6 @@ pub struct ItemPlacement {
     pub rotation: Rotation, // For rotated items
 }
 
-#[derive(Component)]
-pub struct Litter; // Marker for dropped/ground-loot items
-
-#[derive(Component)]
-pub struct PickupCandidate {
-    pub selected: bool, 
-}
-
-// --- MESSAGE(S) --- 
-#[derive(Message, Clone)]
-pub struct PickupMessage {
-    pub item_def: Handle<ItemDefinition>,
-    pub world_entity: Entity,
-}
-
-// --- RESOURCES --- 
-#[derive(Resource, Default)]
-pub struct PickupArea {
-    pub candidates: Vec<Entity>, 
-    pub selected_index: usize, 
-    pub player_pos: Vec2, 
-}
-
-#[derive(Resource)]
-pub struct PlacementGhostState {
-    pub active: bool, 
-    pub ghost_entity: Option<Entity>,
-    pub source_item: Entity, // The world item we are placing
-}
-
 // --- SYSTEMS --- 
 fn spawn_bandage(
     mut commands: Commands,
@@ -187,99 +153,11 @@ fn spawn_bandage(
             quantity: 1,
         },
         Litter, 
-        Transform::from_xyz(10.0, 10.0, 2.0),
         Sprite {
             custom_size: Some(Vec2::new(50.0, 50.0)), 
             image: asset_server.load("icons/bandages.png"),
             ..default()
         },
-        
+        Transform::from_xyz(10.0, 150.0, 2.0),
     ));
 }
-
-fn detect_pickup(
-    player: Query<&Transform, With<Player>>, 
-    litter: Query<(Entity, &GlobalTransform), With<Litter>>, 
-    mut pickup_area: ResMut<PickupArea>, 
-    mut commands: Commands, 
-) {
-    let Ok(player_transform) = player.single() else {return}; 
-    pickup_area.player_pos = player_transform.translation.truncate(); 
-
-    let mut new_candidates = Vec::new(); 
-    for (entity, transform) in litter.iter() {
-        let item_pos = transform.translation().truncate(); 
-        if pickup_area.player_pos.distance(item_pos) < 100.0 {
-            new_candidates.push(entity); 
-        }
-    }
-
-    // Update if the items change 
-    if new_candidates != pickup_area.candidates {
-        // Clear
-        for &entity in pickup_area.candidates.iter() {
-            commands.entity(entity).remove::<PickupCandidate>(); 
-        }
-
-        pickup_area.candidates = new_candidates;
-        pickup_area.selected_index = 0; 
-
-        // Mark first item 
-        if let Some(&entity) = pickup_area.candidates.first() {
-            commands.entity(entity).insert(PickupCandidate { selected: true});  
-        }
-    }
-}
-
-fn cycle_pickup(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut pickup_area: ResMut<PickupArea>, 
-    mut commands: Commands, 
-) {
-    if !keyboard.just_pressed(KeyCode::Tab) || pickup_area.candidates.is_empty() {
-        return; 
-    }
-
-    if let Some(&old_entity) = pickup_area.candidates.get(pickup_area.selected_index) {
-        commands.entity(old_entity).remove::<PickupCandidate>(); 
-    }
-
-    // Cycle index
-    pickup_area.selected_index = (pickup_area.selected_index + 1) % pickup_area.candidates.len(); 
-
-    // Add new selection 
-    if let Some(&new_entity) = pickup_area.candidates.get(pickup_area.selected_index) {
-        commands.entity(new_entity).insert(PickupCandidate { selected: true }); 
-    }
-}
-
-fn confirm_pickup(
-    keyboard: Res<ButtonInput<MouseButton>>, 
-    pickup_area: Res<PickupArea>,
-    litter: Query<&Item, With<Litter>>,
-    mut messages: MessageWriter<PickupMessage>,
-) {
-    if !keyboard.just_pressed(MouseButton::Left) {
-        return;
-    }
-
-    if let Some(&selected_entity) = pickup_area.candidates.get(pickup_area.selected_index) {
-        let Ok(item) = litter.get(selected_entity) else {return}; 
-        messages.write(PickupMessage {
-            item_def: item.definition.clone(),
-            world_entity: selected_entity,
-        }); 
-    }
-}
-
-// fn highlight_pickup(
-//     mut candidates: Query<(&mut Sprite, &PickupCandidate), With<Litter>>, 
-// ) {
-//     for (mut sprite, candidate) in candidates.iter_mut() {
-//         let alpha = if candidate.selected {1.0} else {0.5}; 
-
-//         sprite.color = match sprite.color {
-//             Color::Srgba {0, 1, 2, ..} => Color::srgba(r, g,  b, alpha), 
-//         }
-//     }
-// }
