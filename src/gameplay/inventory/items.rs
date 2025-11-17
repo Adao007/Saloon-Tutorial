@@ -1,6 +1,7 @@
 use std::sync::OnceLock;
-use bevy::{prelude::*};
+use bevy::{prelude::*, sprite::{Text2dShadow}};
 use bevy_common_assets::ron::RonAssetPlugin;
+use crate::gameplay::player::aim::{MousePos, get_mouse_position};
 use serde::{Deserialize, Serialize};
 use super::pickup::{PickupPlugin, Litter}; 
 
@@ -11,6 +12,7 @@ impl Plugin for ItemsPlugin {
             .add_plugins(RonAssetPlugin::<ItemDefinition>::new(&[".ron"]))
             .add_plugins(PickupPlugin)
             .add_systems(Startup, spawn_bandage);
+            //.add_systems(Update, test_cursor_text.after(get_mouse_position));
     }
 }
 
@@ -139,6 +141,9 @@ pub struct ItemPlacement {
     pub rotation: Rotation, // For rotated items
 }
 
+#[derive(Component)]
+pub struct LitterId; 
+
 // --- SYSTEMS --- 
 fn spawn_bandage(
     mut commands: Commands,
@@ -160,4 +165,48 @@ fn spawn_bandage(
         },
         Transform::from_xyz(10.0, 150.0, 2.0),
     ));
+for i in 0..100 {
+    commands.spawn((
+        Name::new("Six Shooter"),
+        Item{
+            definition: asset_server.load("items/six_shooter.ron"),
+            quantity: 1,
+        }, 
+        Litter, 
+        Sprite {
+            custom_size: Some(Vec2::new(50.0, 50.0)), 
+            image: asset_server.load("icons/bandages.png"),
+            ..default()
+        },
+        Transform::from_xyz(10.0, 150.0, 2.0),
+    ));
+}
+}
+
+pub fn init_litter_text(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let font = asset_server.load("fonts/ztn.otf"); 
+    let text_font = TextFont {font: font.clone(), font_size: 25.0, ..default()}; 
+    let text_justification = Justify::Center; 
+
+    commands.spawn((
+        Text2d::new("Hello"), 
+        text_font.clone(), 
+        TextLayout::new_with_justify(text_justification), 
+        TextBackgroundColor(Color::BLACK.with_alpha(0.5)), 
+        Text2dShadow::default(), 
+        Transform::from_xyz(0.0, 0.0, 2.0), 
+        LitterId,
+    )); 
+} 
+
+pub fn test_cursor_text(
+    mouse_pos: Res<MousePos>,
+    mut query: Query<&mut Transform, (With<Text2d>, With<LitterId>)>, 
+) {
+    let offset = 10.0; 
+
+    for mut transform in &mut query {
+        transform.translation.x = mouse_pos.position.x;
+        transform.translation.y = mouse_pos.position.y + offset; 
+    }
 }

@@ -1,4 +1,6 @@
 use bevy::prelude::*; 
+use crate::gameplay::inventory::items::LitterId;
+use crate::gameplay::player::aim::MousePos;
 use crate::gameplay::player::player::Player; 
 use super::items::{Item, ItemDefinition}; 
 
@@ -9,7 +11,6 @@ impl Plugin for PickupPlugin {
             .init_resource::<PickupArea>()
             .init_resource::<PlacementGhostState>()
             .add_message::<PickupMessage>()
-            .add_systems(Startup, setup_litter_ui)
             .add_systems(Update, (
                 detect_pickup,
                 cycle_pickup, 
@@ -86,6 +87,8 @@ fn detect_pickup(
         }
     }
 
+    new_candidates.sort(); 
+
     // Update if the items change 
     if new_candidates != pickup_area.candidates {
         println!("Found {} items in pickup range", new_candidates.len());
@@ -148,42 +151,33 @@ fn confirm_pickup(
     }
 }
 
-fn setup_litter_ui(mut commands: Commands) {
-    commands.spawn((
-        LitterName,
-        Text::new(""), 
-        TextFont{
-            font_size: 18.0,
-            ..default()
-        }, 
-        TextColor(Color::WHITE), 
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: px(5),
-            left: px(15),
-            ..default()
-        },
-    ));
-}
-
 fn display_item_name(
-    selected_item: Query<&Item, (With<PickupCandidate>, With<Litter>)>,
+    selected_item: Query<(&Item, &GlobalTransform, &Sprite), (With<PickupCandidate>, With<Litter>)>,
     item_defs: Res<Assets<ItemDefinition>>,
-    mut text_query: Query<&mut Text, With<SelectedItemName>>,
-    mut writer: TextUiWriter, 
+    mouse_pos: Res<MousePos>, 
+    litter_id: Single<Entity, (With<Text2d>, With<LitterId>)>, 
+    mut writer: Text2dWriter, 
 ) {
-    let mut text = text_query.single_mut().ok();
-    if let Ok(item) = selected_item.single() {
+    let Ok((item, transform, sprite)) = selected_item.single() else {
+        *writer.text(*litter_id, 0) = "".to_string(); 
+        return; 
+    }; 
+
+    let cursor_pos = mouse_pos.position; 
+    let item_pos = transform.translation().truncate(); 
+    let half_size = sprite.custom_size.unwrap_or(Vec2::splat(32.0)) / 2.0; 
+
+    let is_hovering = cursor_pos.x >= item_pos.x - half_size.x 
+        && cursor_pos.x <= item_pos.x + half_size.x
+        && cursor_pos.y >= item_pos.y - half_size.y
+        && cursor_pos.y <= item_pos.y + half_size.y;
+
+    if is_hovering {
         if let Some(def) = item_defs.get(&item.definition) {
-            if let Some(ref mut text_component) = text {
-                println!("Displaying name: {}", def.name);
-                text_component.0 = format!("Press [E] to pickup: {}", def.name);
-            }
+            *writer.text(*litter_id, 0) = def.name.clone(); 
         }
     }
     else {
-        if let Some(ref mut text_component) = text {
-            text_component.0 = "".to_string(); 
-        }
+        *writer.text(*litter_id, 0) = "".to_string(); 
     }
 }
