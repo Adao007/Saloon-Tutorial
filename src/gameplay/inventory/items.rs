@@ -12,7 +12,6 @@ impl Plugin for ItemsPlugin {
             .add_plugins(RonAssetPlugin::<ItemDefinition>::new(&[".ron"]))
             .add_plugins(PickupPlugin)
             .add_systems(Startup, spawn_bandage);
-            //.add_systems(Update, test_cursor_text.after(get_mouse_position));
     }
 }
 
@@ -199,7 +198,7 @@ pub fn init_litter_text(mut commands: Commands, asset_server: Res<AssetServer>) 
     )); 
 } 
 
-pub fn test_cursor_text(
+pub fn move_cursor_text(
     mouse_pos: Res<MousePos>,
     mut query: Query<&mut Transform, (With<Text2d>, With<LitterId>)>, 
 ) {

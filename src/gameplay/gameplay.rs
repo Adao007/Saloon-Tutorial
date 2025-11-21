@@ -22,7 +22,7 @@ impl Plugin for GameplayPlugin {
             (
                 update_camera,
                 get_mouse_position,
-                test_cursor_text.after(get_mouse_position),
+                move_cursor_text.after(get_mouse_position),
                 rotate_aim.after(get_mouse_position),
                 movement,
                 run,
