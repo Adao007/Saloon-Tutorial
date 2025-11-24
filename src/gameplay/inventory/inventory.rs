@@ -1,6 +1,22 @@
 use bevy::prelude::*; 
+use crate::gameplay::inventory::items::ItemsPlugin;
 use std::collections::{HashMap, HashSet};
-use super::items::{Item, ItemDefinition}; 
+use super::items::{ItemDefinition}; 
+
+pub struct InventoryPlugin; 
+impl Plugin for InventoryPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .init_resource::<InventoryUIState>()
+            .add_plugins(ItemsPlugin)
+            .add_systems(Startup, (setup_inventory, setup_inventory_ui).chain())
+            .add_systems(Update, (
+                toggle_inventory_ui,
+                update_inventory_visibility,
+                visualize_inventory_grid,
+            ));
+    }
+}
 
 // --- COMPONENTS ---- 
 #[derive(Component)]
@@ -83,6 +99,8 @@ pub struct PlacementGhost;
 #[derive(Component)]
 pub struct Hotbar; 
 
+#[derive(Component)]
+pub struct CellPosition(pub IVec2);
 
 // --- EVENTS --- 
 #[derive(Event)]
@@ -98,7 +116,6 @@ pub struct InventoryAction {
     pub new_rotation: u8, 
 }
 
-
 // --- RESOURCES --- 
 #[derive(Resource, Default)]
 pub struct InventoryUIState{
@@ -106,30 +123,16 @@ pub struct InventoryUIState{
     pub cursor_world_pos: Vec2, 
 }
 
-// TODO! 
-// Open Inventory
-// Changes based on what is equipped? 
-
-// Hotbar Inventory --> Equipment/Consumables
-// Holsters: Can store weapons, has access to hotbar
-// Pockets, Utility Belts, etc: Can store Consumables and Salvage, has access to hotbar
-
-// Main Storage --> Bags, Backpacks, etc
-// Can store any items, does not affect hotbar. 
-
-// Items are stored when they fit into place. 
-// Items can be rotated
-// Items can be inspected? 
-// Change Hotbar order: 1, 2, 3, 4, etc 
-
 #[derive(Resource)]
 pub struct PlayerInventory {
     pub entity: Entity, 
 }
 
+
+// --- SYSTEMS --- 
 pub fn setup_inventory(mut commands: Commands) {
     let inventory = commands.spawn((
-        Inventory::rectangle(8, 10),
+        Inventory::rectangle(4, 4),
         Name::new("Player Inventory"),
     )).id(); 
 
@@ -185,5 +188,45 @@ pub fn visualize_inventory_grid(
     // Draw occupied cells (red)
     for (&pos, _) in &inventory.occupied {
         gizmos.rect(pos.as_vec2().extend(0.0), Vec2::splat(32.0), Color::srgb(1.0, 0.0, 0.0));
+    }
+}
+
+fn setup_inventory_ui(
+    player_inv: Res<PlayerInventory>,
+    inventories: Query<&Inventory>,
+    mut commands: Commands,
+) {
+    let Ok(inventory) = inventories.get(player_inv.entity) else { return };
+    
+    // Spawn root container (invisible, just a parent)
+    let root = commands.spawn((
+        InventoryUI,
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px(100.0),
+            top: Val::Px(100.0),
+            ..default()
+        },
+        Visibility::Hidden,
+    )).id();
+    
+    // Spawn cells ONLY for valid positions
+    for &pos in &inventory.valid_cells {
+        let cell = commands.spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(pos.x as f32 * 32.0),
+                top: Val::Px(pos.y as f32 * 32.0),
+                width: Val::Px(32.0),
+                height: Val::Px(32.0),
+                border: UiRect::all(Val::Px(1.0)),
+                ..default()
+            },
+            BorderColor::all(Color::srgb(0.0, 1.0, 0.0)),
+            BackgroundColor(Color::NONE.into()),
+            CellPosition(pos), // Marker to identify which cell this is
+        )).id();
+        
+        commands.entity(root).add_child(cell);
     }
 }

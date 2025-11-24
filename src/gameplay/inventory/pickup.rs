@@ -3,10 +3,6 @@ use crate::gameplay::inventory::items::LitterId;
 use crate::gameplay::player::aim::MousePos;
 use crate::gameplay::player::player::Player; 
 use crate::gameplay::inventory::items::Rotation;
-use crate::gameplay::inventory::inventory::toggle_inventory_ui;
-use crate::gameplay::inventory::inventory::update_inventory_visibility;
-use crate::gameplay::inventory::inventory::visualize_inventory_grid;
-use crate::gameplay::inventory::inventory::InventoryUIState;
 use super::items::{Item, ItemDefinition}; 
 
 pub struct PickupPlugin; 
@@ -15,16 +11,12 @@ impl Plugin for PickupPlugin {
         app
             .init_resource::<PickupArea>()
             .init_resource::<PlacementGhostState>()
-            .init_resource::<InventoryUIState>()
             .add_message::<PickupMessage>()
             .add_systems(Update, (
                 detect_pickup,
                 cycle_pickup, 
                 confirm_pickup,
                 display_item_name,
-                toggle_inventory_ui,
-                update_inventory_visibility,
-                visualize_inventory_grid,
             ));
     }
 }

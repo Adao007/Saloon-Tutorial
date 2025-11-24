@@ -12,7 +12,7 @@ impl Plugin for GameplayPlugin {
         .insert_resource(MousePos {
             position: Vec2::new(0.0, 0.0),
         })
-        .add_plugins(ItemsPlugin)
+        .add_plugins(InventoryPlugin)
         .add_message::<PickupMessage>()
         .add_systems(
             Startup,
