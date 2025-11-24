@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use std::collections::{HashMap, HashSet};
 use super::items::{Item, ItemDefinition}; 
 
-// Allows access to the inventory systems
+// --- COMPONENTS ---- 
 #[derive(Component)]
 pub struct Inventory{
     // Shape of Inventory
@@ -74,6 +74,17 @@ impl Inventory {
     }
 }
 
+#[derive(Component)]
+pub struct InventoryUI; 
+
+#[derive(Component)]
+pub struct PlacementGhost; 
+
+#[derive(Component)]
+pub struct Hotbar; 
+
+
+// --- EVENTS --- 
 #[derive(Event)]
 pub struct PickupItem {
     pub item_def: Handle<ItemDefinition>,
@@ -87,17 +98,13 @@ pub struct InventoryAction {
     pub new_rotation: u8, 
 }
 
-#[derive(Resource)]
+
+// --- RESOURCES --- 
+#[derive(Resource, Default)]
 pub struct InventoryUIState{
     pub is_open: bool, 
     pub cursor_world_pos: Vec2, 
 }
-
-#[derive(Component)]
-pub struct PlacementGhost; 
-
-#[derive(Component)]
-pub struct Hotbar; 
 
 // TODO! 
 // Open Inventory
@@ -120,7 +127,7 @@ pub struct PlayerInventory {
     pub entity: Entity, 
 }
 
-fn setup_inventory(mut commands: Commands) {
+pub fn setup_inventory(mut commands: Commands) {
     let inventory = commands.spawn((
         Inventory::rectangle(8, 10),
         Name::new("Player Inventory"),
@@ -132,4 +139,51 @@ fn setup_inventory(mut commands: Commands) {
         is_open: false, 
         cursor_world_pos: Vec2::ZERO,
     });
+}
+
+pub fn toggle_inventory_ui(
+    keyboard: Res<ButtonInput<KeyCode>>, 
+    mut ui_state: ResMut<InventoryUIState>, 
+) {
+    if keyboard.just_pressed(KeyCode::KeyI) {
+        ui_state.is_open = !ui_state.is_open; 
+        println!("Inventory UI: {}", ui_state.is_open); 
+    }
+}
+
+pub fn update_inventory_visibility(
+    ui_state: Res<InventoryUIState>, 
+    mut ui_root: Query<&mut Visibility, With<InventoryUI>>, 
+) {
+    let Ok(mut visibility) = ui_root.single_mut() else {
+        println!("Warning: No InventoryUI entity found"); 
+        return; 
+    }; 
+
+    *visibility = if ui_state.is_open {
+        Visibility::Visible
+    } else {
+        Visibility::Hidden
+    };
+}
+
+pub fn visualize_inventory_grid(
+    ui_state: Res<InventoryUIState>,
+    player_inv: Res<PlayerInventory>,
+    inventories: Query<&Inventory>,
+    mut gizmos: Gizmos,
+) {
+    if !ui_state.is_open { return };
+    
+    let Ok(inventory) = inventories.get(player_inv.entity) else { return };
+    
+    // Draw valid cells (green)
+    for &cell in &inventory.valid_cells {
+        gizmos.rect(cell.as_vec2().extend(0.0), Vec2::splat(32.0), Color::srgb(0.0, 1.0, 0.0));
+    }
+    
+    // Draw occupied cells (red)
+    for (&pos, _) in &inventory.occupied {
+        gizmos.rect(pos.as_vec2().extend(0.0), Vec2::splat(32.0), Color::srgb(1.0, 0.0, 0.0));
+    }
 }

@@ -1,12 +1,12 @@
 use bevy::prelude::*; 
-use crate::gameplay::inventory::items::ItemPlacement;
 use crate::gameplay::inventory::items::LitterId;
 use crate::gameplay::player::aim::MousePos;
 use crate::gameplay::player::player::Player; 
 use crate::gameplay::inventory::items::Rotation;
-use crate::gameplay::inventory::inventory::Inventory;
-use crate::gameplay::inventory::inventory::PlayerInventory;
-use crate::gameplay::inventory::inventory::PlacementGhost;
+use crate::gameplay::inventory::inventory::toggle_inventory_ui;
+use crate::gameplay::inventory::inventory::update_inventory_visibility;
+use crate::gameplay::inventory::inventory::visualize_inventory_grid;
+use crate::gameplay::inventory::inventory::InventoryUIState;
 use super::items::{Item, ItemDefinition}; 
 
 pub struct PickupPlugin; 
@@ -15,13 +15,17 @@ impl Plugin for PickupPlugin {
         app
             .init_resource::<PickupArea>()
             .init_resource::<PlacementGhostState>()
+            .init_resource::<InventoryUIState>()
             .add_message::<PickupMessage>()
             .add_systems(Update, (
                 detect_pickup,
                 cycle_pickup, 
                 confirm_pickup,
                 display_item_name,
-            ).chain());
+                toggle_inventory_ui,
+                update_inventory_visibility,
+                visualize_inventory_grid,
+            ));
     }
 }
 
@@ -31,7 +35,6 @@ pub struct Litter; // Marker for dropped/ground-loot items
 
 #[derive(Component)]
 pub struct PickupCandidate {
-    pub selected: bool, 
 }
 
 #[derive(Component)]
@@ -113,7 +116,7 @@ fn detect_pickup(
 
         // Mark first item 
         if let Some(&entity) = pickup_area.candidates.first() {
-            commands.entity(entity).insert(PickupCandidate { selected: true});  
+            commands.entity(entity).insert(PickupCandidate{});  
         }
     }
 }
@@ -138,7 +141,7 @@ fn cycle_pickup(
 
     // Add new selection 
     if let Some(&new_entity) = pickup_area.candidates.get(pickup_area.selected_index) {
-        commands.entity(new_entity).insert(PickupCandidate { selected: true }); 
+        commands.entity(new_entity).insert(PickupCandidate{}); 
     }
 }
 
@@ -190,60 +193,5 @@ fn display_item_name(
     }
     else {
         *writer.text(*litter_id, 0) = "".to_string(); 
-    }
-}
-
-fn handle_pickup_message(
-    mut messages: MessageReader<PickupMessage>, 
-    mut commands: Commands, 
-    mut inventories: Query<&mut Inventory>, 
-    asset_server: Res<AssetServer>,
-    item_defs: Res<Assets<ItemDefinition>>, 
-    player_inv: Res<PlayerInventory>, 
-    mut ghost_state: ResMut<PlacementGhostState>, 
-) {
-    for message in messages.read() {
-        let Some(def) = item_defs.get(&message.item_def) else {continue}; 
-        let Ok(mut inventory) = inventories.get_mut(player_inv.entity) else {continue}; 
-        let cells = def.get_cells(Rotation::Zero); 
-
-        // Auto-place items 
-        if let Some(pos) = inventory.find_valid(&cells) {
-            info!("Auto-placed {} at {:?}", def.name, pos); 
-
-            let item_entity = commands.spawn((
-                Item {
-                    definition: message.item_def.clone(),
-                    quantity: 1, 
-                }, 
-                ItemPlacement {
-                    container: player_inv.entity,
-                    x: pos.x as u32, 
-                    y: pos.y as u32,
-                    rotation: Rotation::Zero, 
-                }, 
-            )).id(); 
-        }
-
-        // Manual Placement 
-        info!("Manual placement for {}", def.name); 
-        commands.entity(message.world_entity).insert(Visibility::Hidden); 
-
-        let ghost = commands.spawn((
-            PlacementGhost, 
-            GhostItem {
-                def: message.item_def.clone(), 
-                rotation: Rotation::Zero, 
-            }, 
-            Sprite {
-                image: asset_server.load(&def.icon), 
-                color: Color::srgba(1.0, 1.0, 1.0, 0.5), 
-                custom_size: Some(Vec2::new(32.0, 32.0)),
-                ..default()
-            }, 
-            Transform::from_xyz(0.0, 0.0, 10.0), 
-        )).id(); 
-
-
     }
 }

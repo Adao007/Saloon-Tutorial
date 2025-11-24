@@ -2,6 +2,11 @@ use std::sync::OnceLock;
 use bevy::{prelude::*, sprite::{Text2dShadow}};
 use bevy_common_assets::ron::RonAssetPlugin;
 use crate::gameplay::player::aim::{MousePos, get_mouse_position};
+use crate::gameplay::inventory::inventory::setup_inventory;
+use crate::gameplay::inventory::inventory::InventoryUI;
+use crate::gameplay::inventory::inventory::PlayerInventory;
+use crate::gameplay::inventory::inventory::Inventory;
+use crate::gameplay::inventory::inventory::InventoryUIState;
 use serde::{Deserialize, Serialize};
 use super::pickup::{PickupPlugin, Litter}; 
 
@@ -143,6 +148,9 @@ pub struct ItemPlacement {
 #[derive(Component)]
 pub struct LitterId; 
 
+#[derive(Component)]
+pub struct CellPosition(pub IVec2);
+
 // --- SYSTEMS --- 
 fn spawn_bandage(
     mut commands: Commands,
@@ -164,7 +172,7 @@ fn spawn_bandage(
         },
         Transform::from_xyz(10.0, 150.0, 2.0),
     ));
-for i in 0..100 {
+
     commands.spawn((
         Name::new("Six Shooter"),
         Item{
@@ -174,13 +182,53 @@ for i in 0..100 {
         Litter, 
         Sprite {
             custom_size: Some(Vec2::new(50.0, 50.0)), 
-            image: asset_server.load("icons/bandages.png"),
+            image: asset_server.load("icons/six_shooter.png"),
             ..default()
         },
         Transform::from_xyz(10.0, 150.0, 2.0),
     ));
 }
+
+fn setup_inventory_ui(
+    player_inv: Res<PlayerInventory>,
+    inventories: Query<&Inventory>,
+    mut commands: Commands,
+) {
+    let Ok(inventory) = inventories.get(player_inv.entity) else { return };
+    
+    // Spawn root container (invisible, just a parent)
+    let root = commands.spawn((
+        InventoryUI,
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px(100.0),
+            top: Val::Px(100.0),
+            ..default()
+        },
+        Visibility::Hidden,
+    )).id();
+    
+    // Spawn cells ONLY for valid positions
+    for &pos in &inventory.valid_cells {
+        let cell = commands.spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(pos.x as f32 * 32.0),
+                top: Val::Px(pos.y as f32 * 32.0),
+                width: Val::Px(32.0),
+                height: Val::Px(32.0),
+                border: UiRect::all(Val::Px(1.0)),
+                ..default()
+            },
+            BorderColor::all(Color::srgb(0.0, 1.0, 0.0)),
+            BackgroundColor(Color::NONE.into()),
+            CellPosition(pos), // Marker to identify which cell this is
+        )).id();
+        
+        commands.entity(root).add_child(cell);
+    }
 }
+
 
 pub fn init_litter_text(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/ztn.otf"); 

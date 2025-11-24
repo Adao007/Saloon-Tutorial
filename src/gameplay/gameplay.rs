@@ -8,7 +8,8 @@ use bevy::prelude::*;
 pub struct GameplayPlugin;
 impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(MousePos {
+        app
+        .insert_resource(MousePos {
             position: Vec2::new(0.0, 0.0),
         })
         .add_plugins(ItemsPlugin)
