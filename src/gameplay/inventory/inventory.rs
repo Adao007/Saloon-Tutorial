@@ -1,5 +1,6 @@
 use bevy::prelude::*; 
 use crate::gameplay::inventory::items::ItemsPlugin;
+use crate::gameplay::player::player::Player;
 use std::collections::{HashMap, HashSet};
 use super::items::{ItemDefinition}; 
 
@@ -9,12 +10,12 @@ impl Plugin for InventoryPlugin {
         app
             .init_resource::<InventoryUIState>()
             .add_plugins(ItemsPlugin)
-            .add_systems(Startup, (setup_inventory, setup_inventory_ui).chain())
-            .add_systems(Update, (
-                toggle_inventory_ui,
-                update_inventory_visibility,
-                visualize_inventory_grid,
-            ));
+            .add_systems(Startup, (setup_inventory, setup_inventory_ui).chain());
+            // .add_systems(Update, (
+            //     toggle_inventory_ui,
+            //     update_inventory_visibility,
+            //     visualize_inventory_grid,
+            // ));
     }
 }
 
@@ -94,9 +95,6 @@ impl Inventory {
 pub struct InventoryUI; 
 
 #[derive(Component)]
-pub struct PlacementGhost; 
-
-#[derive(Component)]
 pub struct Hotbar; 
 
 #[derive(Component)]
@@ -174,20 +172,25 @@ pub fn visualize_inventory_grid(
     ui_state: Res<InventoryUIState>,
     player_inv: Res<PlayerInventory>,
     inventories: Query<&Inventory>,
+    player: Query<&Transform, With<Player>>, // ADD THIS
     mut gizmos: Gizmos,
 ) {
     if !ui_state.is_open { return };
     
     let Ok(inventory) = inventories.get(player_inv.entity) else { return };
+    let Ok(player_tf) = player.single() else { return };
+    let player_pos = player_tf.translation.truncate(); // Player's world position
     
-    // Draw valid cells (green)
+    // Draw grid offset by player position so it follows them
     for &cell in &inventory.valid_cells {
-        gizmos.rect(cell.as_vec2().extend(0.0), Vec2::splat(32.0), Color::srgb(0.0, 1.0, 0.0));
+        let world_pos = (player_pos + cell.as_vec2() * 32.0).extend(10.0);
+        gizmos.rect(world_pos, Vec2::splat(32.0), Color::srgb(0.0, 1.0, 0.0));
     }
     
-    // Draw occupied cells (red)
+    // Draw occupied cells
     for (&pos, _) in &inventory.occupied {
-        gizmos.rect(pos.as_vec2().extend(0.0), Vec2::splat(32.0), Color::srgb(1.0, 0.0, 0.0));
+        let world_pos = (player_pos + pos.as_vec2() * 32.0).extend(10.0);
+        gizmos.rect(world_pos, Vec2::splat(32.0), Color::srgb(1.0, 0.0, 0.0));
     }
 }
 
@@ -222,7 +225,6 @@ fn setup_inventory_ui(
                 border: UiRect::all(Val::Px(1.0)),
                 ..default()
             },
-            BorderColor::all(Color::srgb(0.0, 1.0, 0.0)),
             BackgroundColor(Color::NONE.into()),
             CellPosition(pos), // Marker to identify which cell this is
         )).id();

@@ -3,6 +3,12 @@ use crate::gameplay::inventory::items::LitterId;
 use crate::gameplay::player::aim::MousePos;
 use crate::gameplay::player::player::Player; 
 use crate::gameplay::inventory::items::Rotation;
+use crate::gameplay::inventory::items::ItemPlacement;
+use crate::gameplay::inventory::inventory::PlayerInventory;
+use crate::gameplay::inventory::inventory::Inventory;
+use crate::gameplay::inventory::inventory::toggle_inventory_ui;
+use crate::gameplay::inventory::inventory::update_inventory_visibility;
+use crate::gameplay::inventory::inventory::visualize_inventory_grid;
 use super::items::{Item, ItemDefinition}; 
 
 pub struct PickupPlugin; 
@@ -17,7 +23,15 @@ impl Plugin for PickupPlugin {
                 cycle_pickup, 
                 confirm_pickup,
                 display_item_name,
-            ));
+                handle_pickup_message, 
+                update_ghost_placement, 
+                cycle_ghost_rotation,
+                finalize_ghost_placement,
+                cancel_ghost_placement,
+                toggle_inventory_ui,
+                update_inventory_visibility,
+                visualize_inventory_grid,
+            ).chain());
     }
 }
 
@@ -40,6 +54,9 @@ pub struct GhostItem {
     pub def: Handle<ItemDefinition>, 
     pub rotation: Rotation, 
 }
+
+#[derive(Component)]
+pub struct PlacementGhost; 
 
 // --- RESOURCES --- 
 #[derive(Resource, Default)]
@@ -185,5 +202,172 @@ fn display_item_name(
     }
     else {
         *writer.text(*litter_id, 0) = "".to_string(); 
+    }
+}
+
+fn handle_pickup_message(
+    mut messages: MessageReader<PickupMessage>, 
+    mut commands: Commands,
+    mut inventories: Query<&mut Inventory>,
+    mut ghost_state: ResMut<PlacementGhostState>, 
+    asset_server: Res<AssetServer>,
+    item_defs: Res<Assets<ItemDefinition>>, 
+    player_inventory: Res<PlayerInventory>, 
+) {
+    for message in messages.read() {
+        let Some(def) = item_defs.get(&message.item_def) else { continue }; 
+        let Ok(mut inventory) = inventories.get_mut(player_inventory.entity) else { continue }; 
+        let cells = def.get_cells(Rotation::Zero); 
+
+        // Auto-Place
+        if let Some(pos) = inventory.find_valid(&cells) {
+            info!("Auto-placed {} at {:?}", def.name, pos); 
+
+            let item_entity = commands.spawn((
+                Item {
+                    definition: message.item_def.clone(),
+                    quantity: 1, 
+                }, 
+                ItemPlacement {
+                    container: player_inventory.entity, 
+                    x: pos.x as u32,
+                    y: pos.y as u32, 
+                    rotation: Rotation::Zero, 
+                }, 
+            )).id(); 
+
+            inventory.place(item_entity, &cells, pos);
+            commands.entity(message.world_entity).despawn();
+            continue;
+        }
+
+        // MANUAL PLACEMENT
+        info!("Manual placement for {}", def.name);
+        commands.entity(message.world_entity).insert(Visibility::Hidden);
+        
+        let ghost = commands.spawn((
+            PlacementGhost,
+            GhostItem {
+                def: message.item_def.clone(),
+                rotation: Rotation::Zero,
+            },
+            Sprite {
+                image: asset_server.load(&def.icon), // Use icon for ghost
+                color: Color::srgba(1.0, 1.0, 1.0, 0.5),
+                custom_size: Some(Vec2::new(32.0, 32.0)),
+                ..default()
+            },
+            Transform::from_xyz(0.0, 0.0, 10.0),
+        )).id();
+        
+        *ghost_state = PlacementGhostState {
+            active: true,
+            ghost_entity: Some(ghost),
+            source_item: message.world_entity,
+            target_inventory: player_inventory.entity,
+        };
+    }
+}
+
+fn update_ghost_placement(
+    state: Res<PlacementGhostState>,
+    mut ghost_q: Query<(&GhostItem, &mut Transform, &mut Sprite)>,
+    mouse_pos: Res<MousePos>,
+    inventories: Query<&Inventory>,
+    item_defs: Res<Assets<ItemDefinition>>,
+) {
+    if !state.active || state.ghost_entity.is_none() { return };
+    
+    let Ok((ghost, mut transform, mut sprite)) = ghost_q.get_mut(state.ghost_entity.unwrap()) else { return };
+    let Ok(inventory) = inventories.get(state.target_inventory) else { return };
+    let Some(def) = item_defs.get(&ghost.def) else { return };
+    
+    // Snap to grid
+    let grid_pos = (mouse_pos.position / 32.0).floor().as_ivec2();
+    transform.translation = (grid_pos.as_vec2() * 32.0).extend(10.0);
+    
+    // Validate placement
+    let cells = def.get_cells(ghost.rotation);
+    if inventory.placeable(&cells, grid_pos, None) {
+        sprite.color.set_alpha(0.5); // Green (keep original color, just opacity)
+    } else {
+        sprite.color.set_alpha(0.2); // Red (translucent red)
+    }
+}
+
+fn cycle_ghost_rotation(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    state: Res<PlacementGhostState>,
+    mut ghost_q: Query<&mut GhostItem>,
+    item_defs: Res<Assets<ItemDefinition>>,
+) {
+    if !keyboard.just_pressed(KeyCode::KeyR) || !state.active { return };
+    
+    let Some(ghost_entity) = state.ghost_entity else { return };
+    let Ok(mut ghost) = ghost_q.get_mut(ghost_entity) else { return };
+    let Some(def) = item_defs.get(&ghost.def) else { return };
+    
+    if def.rotate {
+        ghost.rotation = ghost.rotation.next();
+    }
+}
+
+fn finalize_ghost_placement(
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut state: ResMut<PlacementGhostState>,
+    ghost_q: Query<(&GhostItem, &Transform)>,
+    mut inventories: Query<&mut Inventory>,
+    item_defs: Res<Assets<ItemDefinition>>,
+    mut commands: Commands,
+) {
+    if !state.active || !mouse.just_pressed(MouseButton::Left) { return };
+    
+    let Some(ghost_entity) = state.ghost_entity else { return };
+    let Ok((ghost, transform)) = ghost_q.get(ghost_entity) else { return };
+    let Ok(mut inventory) = inventories.get_mut(state.target_inventory) else { return };
+    let Some(def) = item_defs.get(&ghost.def) else { return };
+    
+    let grid_pos = (transform.translation.truncate() / 32.0).floor().as_ivec2();
+    let cells = def.get_cells(ghost.rotation);
+    
+    if inventory.placeable(&cells, grid_pos, None) {
+        let item_entity = commands.spawn((
+            Item {
+                definition: ghost.def.clone(),
+                quantity: 1,
+            },
+            ItemPlacement {
+                container: state.target_inventory,
+                x: grid_pos.x as u32,
+                y: grid_pos.y as u32,
+                rotation: ghost.rotation,
+            },
+        )).id();
+        
+        inventory.place(item_entity, &cells, grid_pos);
+        commands.entity(state.source_item).despawn();
+        commands.entity(ghost_entity).despawn();
+        state.active = false;
+    }
+}
+
+fn cancel_ghost_placement(
+    mouse: Res<ButtonInput<MouseButton>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut state: ResMut<PlacementGhostState>,
+    mut commands: Commands,
+) {
+    if !state.active { return };
+    
+    let should_cancel = mouse.just_pressed(MouseButton::Right) 
+        || keyboard.just_pressed(KeyCode::Escape);
+    
+    if should_cancel {
+        commands.entity(state.source_item).remove::<Visibility>(); // Show world item again
+        if let Some(ghost) = state.ghost_entity {
+            commands.entity(ghost).despawn();
+        }
+        state.active = false;
+        state.ghost_entity = None;
     }
 }
