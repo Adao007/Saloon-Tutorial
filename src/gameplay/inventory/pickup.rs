@@ -28,9 +28,9 @@ impl Plugin for PickupPlugin {
                 cycle_ghost_rotation,
                 finalize_ghost_placement,
                 cancel_ghost_placement,
-                toggle_inventory_ui,
-                update_inventory_visibility,
-                visualize_inventory_grid,
+                // toggle_inventory_ui,
+                // update_inventory_visibility,
+                // visualize_inventory_grid,
             ).chain());
     }
 }

@@ -1,5 +1,5 @@
-use bevy::prelude::*; 
-use crate::gameplay::inventory::items::ItemsPlugin;
+use bevy::{prelude::*}; 
+use crate::gameplay::inventory::items::{ItemsPlugin, Item, ItemPlacement};
 use crate::gameplay::player::player::Player;
 use std::collections::{HashMap, HashSet};
 use super::items::{ItemDefinition}; 
@@ -10,12 +10,12 @@ impl Plugin for InventoryPlugin {
         app
             .init_resource::<InventoryUIState>()
             .add_plugins(ItemsPlugin)
-            .add_systems(Startup, (setup_inventory, setup_inventory_ui).chain());
-            // .add_systems(Update, (
-            //     toggle_inventory_ui,
-            //     update_inventory_visibility,
-            //     visualize_inventory_grid,
-            // ));
+            .add_systems(Startup, (setup_inventory, setup_inventory_ui).chain())
+            .add_systems(Update, (
+                toggle_inventory_ui,
+                update_inventory_visibility,
+                visualize_inventory_grid,
+            ));
     }
 }
 
@@ -58,7 +58,7 @@ impl Inventory {
             let pos = top_left + cell; 
             if !self.available(pos) {
                 if !self.valid_cells.contains(&pos) {
-                    return false;
+                    return false; // Item is sticking out of the "Inventory" container
                 }
                 if let Some(occupant) = self.occupied.get(&pos) {
                     if Some(*occupant) != ignore {
@@ -231,4 +231,16 @@ fn setup_inventory_ui(
         
         commands.entity(root).add_child(cell);
     }
+}
+
+fn sync_inventory_ui (
+    ui_state: Res<InventoryUIState>, 
+    player_inventory: Res<PlayerInventory>, 
+    inventories: Query<&Inventory>, 
+    items: Query<(&Item, &ItemPlacement)>, 
+    item_defs: Res<Assets<ItemDefinition>>, 
+    asset_server: Res<AssetServer>, 
+    mut cells: Query<(&CellPosition, &mut BackgroundColor, &mut BorderColor, Option<&mut ImageNode>)>, 
+) {
+
 }

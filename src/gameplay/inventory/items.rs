@@ -165,6 +165,7 @@ fn spawn_bandage(
         },
         Transform::from_xyz(10.0, 150.0, 2.0),
     ));
+for _i in 0..=10 {
 
     commands.spawn((
         Name::new("Six Shooter"),
@@ -180,6 +181,7 @@ fn spawn_bandage(
         },
         Transform::from_xyz(10.0, 150.0, 2.0),
     ));
+}
 }
 
 pub fn init_litter_text(mut commands: Commands, asset_server: Res<AssetServer>) {
