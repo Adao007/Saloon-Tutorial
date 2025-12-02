@@ -242,5 +242,37 @@ fn sync_inventory_ui (
     asset_server: Res<AssetServer>, 
     mut cells: Query<(&CellPosition, &mut BackgroundColor, &mut BorderColor, Option<&mut ImageNode>)>, 
 ) {
+    if !ui_state.is_open {
+        return
+    }; 
 
+    let Ok(inventory) = inventories.get(player_inventory.entity) else { return }; 
+
+    // Reset all cells to empty state 
+    for (_, mut bg_color, mut border_color, _) in cells.iter_mut() {
+        *bg_color = Color::NONE.into();
+        *border_color = Color::srgba(0.0, 1.0, 0.0, 0.0).into(); 
+    }
+
+    // Mark occupied cells and add item icons
+    for (&pos, &item_entity) in inventory.occupied.iter() {
+        if let Ok((cell_pos, mut bg_color, mut border_color, ui_image)) = cells.get_mut(cell_entity) {
+            if cell_pos.0 == pos {
+                *bg_color = Color::srgb(0.3, 0.3, 0.3).into(); 
+                *border_color = Color::srgb(1.0, 0.0, 0.0).into(); 
+
+                // Add or update icons 
+                if let Ok((item, _)) = items.get(item_entity) {
+                    if let Some(def) = item_defs.get(&item.definition) {
+                        if let Some(mut image) = ui_image {
+                            image.texture = asset_server.load(&def.icon);
+                        }
+                        else {
+                            
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
