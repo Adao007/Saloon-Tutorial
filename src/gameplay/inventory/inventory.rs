@@ -1,5 +1,6 @@
 use bevy::{prelude::*}; 
 use crate::gameplay::inventory::items::{ItemsPlugin, Item, ItemPlacement};
+use crate::gameplay::inventory::pickup::handle_pickup_message;
 use crate::gameplay::player::player::Player;
 use std::collections::{HashMap, HashSet};
 use super::items::{ItemDefinition}; 
@@ -10,11 +11,17 @@ impl Plugin for InventoryPlugin {
         app
             .init_resource::<InventoryUIState>()
             .add_plugins(ItemsPlugin)
-            .add_systems(Startup, (setup_inventory, setup_inventory_ui).chain())
+            .add_systems(Startup, (
+                setup_inventory, 
+                //setup_minimal_ui,
+                setup_inventory_ui,
+                debug_ui_exists,
+            ).chain())
             .add_systems(Update, (
                 toggle_inventory_ui,
                 update_inventory_visibility,
-                visualize_inventory_grid,
+                // GIZMOS: visualize_inventory_grid,
+                sync_inventory_ui.after(handle_pickup_message),
             ));
     }
 }
@@ -206,10 +213,12 @@ fn setup_inventory_ui(
         InventoryUI,
         Node {
             position_type: PositionType::Absolute,
-            left: Val::Px(100.0),
-            top: Val::Px(100.0),
+            left: Val::Percent(50.0),
+            top: Val::Percent(50.0),
             ..default()
         },
+        BackgroundColor(Color::srgb(1.0, 0.0, 1.0)),
+        Transform::from_translation(Vec3::ZERO),
         Visibility::Hidden,
     )).id();
     
@@ -222,14 +231,26 @@ fn setup_inventory_ui(
                 top: Val::Px(pos.y as f32 * 32.0),
                 width: Val::Px(32.0),
                 height: Val::Px(32.0),
-                border: UiRect::all(Val::Px(1.0)),
+                border: UiRect::all(Val::Px(4.0)),
                 ..default()
             },
-            BackgroundColor(Color::NONE.into()),
+            BorderColor::all(Color::srgb(0.5, 0.5, 0.5)), // 30% gray border
             CellPosition(pos), // Marker to identify which cell this is
         )).id();
         
         commands.entity(root).add_child(cell);
+    }
+}
+
+fn debug_ui_exists(
+    ui_root: Query<Entity, With<InventoryUI>>,
+    cells: Query<&CellPosition>,
+) {
+    if let Ok(root) = ui_root.single() {
+        println!("UI root spawned: {:?}", root);
+        println!("Grid cells found: {}", cells.iter().count());
+    } else {
+        println!("ERROR: No UI root found!");
     }
 }
 
@@ -240,7 +261,8 @@ fn sync_inventory_ui (
     items: Query<(&Item, &ItemPlacement)>, 
     item_defs: Res<Assets<ItemDefinition>>, 
     asset_server: Res<AssetServer>, 
-    mut cells: Query<(&CellPosition, &mut BackgroundColor, &mut BorderColor, Option<&mut ImageNode>)>, 
+    mut commands: Commands,
+    mut cells: Query<(Entity, &CellPosition, &mut BackgroundColor, &mut BorderColor, Option<&mut ImageNode>)>, 
 ) {
     if !ui_state.is_open {
         return
@@ -248,28 +270,29 @@ fn sync_inventory_ui (
 
     let Ok(inventory) = inventories.get(player_inventory.entity) else { return }; 
 
-    // Reset all cells to empty state 
-    for (_, mut bg_color, mut border_color, _) in cells.iter_mut() {
+    // Mark occupied cells and add item icons
+    for (cell_entity, cell_pos, mut bg_color, mut border_color, image_node) in cells.iter_mut() {
         *bg_color = Color::NONE.into();
         *border_color = Color::srgba(0.0, 1.0, 0.0, 0.0).into(); 
-    }
+        
+        if let Some(&item_entity) = inventory.occupied.get(&cell_pos.0) {
+            *bg_color = Color::srgb(0.3, 0.3, 0.3).into(); 
+            *border_color = Color::srgb(1.0, 0.0, 0.0).into(); 
 
-    // Mark occupied cells and add item icons
-    for (&pos, &item_entity) in inventory.occupied.iter() {
-        if let Ok((cell_pos, mut bg_color, mut border_color, ui_image)) = cells.get_mut(cell_entity) {
-            if cell_pos.0 == pos {
-                *bg_color = Color::srgb(0.3, 0.3, 0.3).into(); 
-                *border_color = Color::srgb(1.0, 0.0, 0.0).into(); 
-
-                // Add or update icons 
-                if let Ok((item, _)) = items.get(item_entity) {
-                    if let Some(def) = item_defs.get(&item.definition) {
-                        if let Some(mut image) = ui_image {
-                            image.texture = asset_server.load(&def.icon);
-                        }
-                        else {
-                            
-                        }
+            // Add or update icons 
+            if let Ok((item, _)) = items.get(item_entity) {
+                if let Some(def) = item_defs.get(&item.definition) {
+                    if let Some(mut node) = image_node { 
+                        node.image = asset_server.load(&def.icon);
+                    }
+                    else {
+                        commands.entity(cell_entity).insert(ImageNode {
+                            image: asset_server.load(&def.icon),
+                            color: Color::WHITE,
+                            flip_x: false,
+                            flip_y: false, 
+                            ..default()
+                        });                         
                     }
                 }
             }

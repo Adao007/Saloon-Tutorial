@@ -205,7 +205,7 @@ fn display_item_name(
     }
 }
 
-fn handle_pickup_message(
+pub fn handle_pickup_message(
     mut messages: MessageReader<PickupMessage>, 
     mut commands: Commands,
     mut inventories: Query<&mut Inventory>,
