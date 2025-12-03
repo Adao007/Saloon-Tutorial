@@ -1,4 +1,5 @@
 use bevy::{prelude::*}; 
+use crate::gameplay::inventory::interaction::*;
 use crate::gameplay::inventory::items::{ItemsPlugin, Item, ItemPlacement};
 use crate::gameplay::inventory::pickup::handle_pickup_message;
 use crate::gameplay::player::player::Player;
@@ -10,7 +11,6 @@ impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<InventoryUIState>()
-            .add_plugins(ItemsPlugin)
             .add_systems(Startup, (
                 setup_inventory, 
                 //setup_minimal_ui,
@@ -22,7 +22,11 @@ impl Plugin for InventoryPlugin {
                 update_inventory_visibility,
                 // GIZMOS: visualize_inventory_grid,
                 sync_inventory_ui.after(handle_pickup_message),
-            ));
+                detect_inventory_click,
+                inventory_drag,
+                debug_mouse_clicks,
+            ).chain())
+            .add_plugins(ItemsPlugin);
     }
 }
 
@@ -132,7 +136,6 @@ pub struct InventoryUIState{
 pub struct PlayerInventory {
     pub entity: Entity, 
 }
-
 
 // --- SYSTEMS --- 
 pub fn setup_inventory(mut commands: Commands) {

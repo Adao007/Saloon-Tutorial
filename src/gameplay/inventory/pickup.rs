@@ -6,9 +6,6 @@ use crate::gameplay::inventory::items::Rotation;
 use crate::gameplay::inventory::items::ItemPlacement;
 use crate::gameplay::inventory::inventory::PlayerInventory;
 use crate::gameplay::inventory::inventory::Inventory;
-use crate::gameplay::inventory::inventory::toggle_inventory_ui;
-use crate::gameplay::inventory::inventory::update_inventory_visibility;
-use crate::gameplay::inventory::inventory::visualize_inventory_grid;
 use super::items::{Item, ItemDefinition}; 
 
 pub struct PickupPlugin; 
@@ -28,9 +25,6 @@ impl Plugin for PickupPlugin {
                 cycle_ghost_rotation,
                 finalize_ghost_placement,
                 cancel_ghost_placement,
-                // toggle_inventory_ui,
-                // update_inventory_visibility,
-                // visualize_inventory_grid,
             ).chain());
     }
 }
