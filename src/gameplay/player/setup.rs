@@ -1,5 +1,4 @@
 use crate::gameplay::player::{aim::*, health::*, movement::*, player::Player, stamina::*};
-use super::{ world::*};
 use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
 
@@ -7,10 +6,6 @@ const WALK_SPEED: f32 = 85.0;
 
 #[derive(Component)]
 pub struct Object;
-
-pub fn init_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
-}
 
 pub fn spawn_player(
     mut commands: Commands,

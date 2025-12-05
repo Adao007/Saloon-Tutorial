@@ -3,6 +3,10 @@ use bevy::prelude::*;
 
 const CAMERA_DECAY_RATE: f32 = 2.;
 
+pub fn init_camera(mut commands: Commands) {
+    commands.spawn(Camera2d);
+}
+
 pub fn update_camera(
     mut camera: Single<&mut Transform, (With<Camera2d>, Without<Player>)>,
     player: Single<&Transform, (With<Player>, Without<Camera2d>)>,

@@ -1,6 +1,6 @@
-pub mod camera;
 pub mod gameplay;
 pub mod inventory;
+pub mod item;
 pub mod player;
-pub mod setup; 
-pub mod world; 
+pub mod stage;
+

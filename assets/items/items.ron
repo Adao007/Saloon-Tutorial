@@ -1,0 +1,32 @@
+(
+    items: [
+        // Comsumables
+        (   
+            id: "Bandage",
+            item_type: Consumable,
+            description: "Gauze roll bandage used for small amounts of healing. The white cloth spotted with red has always comforted you.",
+            max_stack: 5,
+            shape: ItemShape( height: 1, width: 1, pattern: [[1]]),
+            rotatable: false, 
+            icon: "icons/bandage.png", 
+        ),
+
+        // Equipment
+        (
+            id: "Six Shooter", 
+            item_type: Equipment,
+            description: "A small gun with a slow reload, on account of you having to reload each bullet one at a time.",
+            max_stack: 1, 
+            shape: ItemShape(
+                height: 2,
+                width: 2, 
+                pattern: [
+                    [1, 1],
+                    [1, 0],
+                ],    
+            ),
+            rotatable: true, 
+            icon: "icons/six_shooter.png",
+        ),
+    ]
+)

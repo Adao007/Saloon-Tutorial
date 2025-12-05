@@ -14,8 +14,6 @@ pub struct StaminaBar {
     pub entity: Entity,
 }
 
-
-
 pub fn update_stamina(
     stamina_query: Query<&Stamina>, 
     mut bar_query: Query<(&StaminaBar, &mut Node), With<StaminaBar>>, 

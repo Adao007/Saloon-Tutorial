@@ -1,35 +1,18 @@
 use crate::gameplay::{
-    player::{aim::*, health::*, movement::*, stamina::*, },
-    inventory::{inventory::*, items::*, pickup::*,},
+    item::items::ItemPlugin,
+    player::player::PlayerPlugin, 
+    stage::stage::StagePlugin,
 };
-use super::{camera::*, setup::*, world::*};
 use bevy::prelude::*;
 
 pub struct GameplayPlugin;
 impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut App) {
         app
-        .insert_resource(MousePos {
-            position: Vec2::new(0.0, 0.0),
-        })
-        .add_systems(
-            Startup,
-            (init_camera, init_environment, spawn_player),
-        )
-        .add_systems(
-            Update,
-            (
-                update_camera,
-                get_mouse_position,
-                rotate_aim.after(get_mouse_position),
-                movement,
-                run,
-                apply_velocity,
-                update_stamina,
-                update_health,
-                restore_stamina,
-            ),
-        );
-        
+            .add_plugins((
+                StagePlugin, 
+                PlayerPlugin, 
+                ItemPlugin,
+            )); 
     }
 }
