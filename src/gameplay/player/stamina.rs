@@ -1,7 +1,9 @@
 use bevy::prelude::*; 
 use super::player::Player; 
+use crate::gameplay::player::movement::Speed;
 
-const REGEN: f32 = 0.15;
+const REGEN: f32 = 2.0;
+const WALK_SPEED: f32 = 85.0;
 
 #[derive(Component)]
 pub struct Stamina{
@@ -26,14 +28,14 @@ pub fn update_stamina(
 }
 
 pub fn restore_stamina(
-    stamina_query: Single<&mut Stamina, With<Player>>, 
-    keyboard_input: Res<ButtonInput<KeyCode>>,
+    stamina_query: Single<(&mut Stamina, &Speed), With<Player>>, 
+    time: Res<Time>,
 ) {
-    let mut stamina = stamina_query.into_inner(); 
+    let (mut stamina, speed) = stamina_query.into_inner(); 
 
-    if stamina.current >= 100.0 || keyboard_input.pressed(KeyCode::ShiftLeft) {
+    if stamina.current >= 100.0 && speed.current != WALK_SPEED {
         return; 
     }
 
-    stamina.current += REGEN; 
+    stamina.current += REGEN * time.delta_secs(); 
 }

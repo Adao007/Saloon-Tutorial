@@ -2,11 +2,13 @@ use super::{
     stamina::Stamina,
     player::Player,
 };
+use crate::gameplay::inventory::ui::InventoryUi;
 use bevy::prelude::*;
 
 const DIRECTION: f32 = 1.0; 
 const RUN_SPEED: f32 = 170.0;
-const STAMINA_DRAIN:f32 = 0.05; 
+const STAMINA_DRAIN: f32 = 0.5; 
+const EMPTY: f32 = 0.0;
 
 #[derive(Component)]
 pub struct Velocity {
@@ -51,16 +53,28 @@ pub fn apply_velocity(
 }
 
 pub fn run(
-    player_query: Single<(&mut Stamina, &mut Speed), With<Player>>,
+    player_query: Single<(&mut Stamina, &mut Speed, &Velocity), With<Player>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
-    let (mut stamina, mut speed) = player_query.into_inner(); 
-    
-    if !keyboard_input.pressed(KeyCode::ShiftLeft) || stamina.current <= 0.0 {
+    let (mut stamina, mut speed, velocity) = player_query.into_inner(); 
+
+    if keyboard_input.pressed(KeyCode::ShiftLeft) && velocity.linvel != Vec3::ZERO {
+        speed.current = RUN_SPEED; 
+        if stamina.current > EMPTY { stamina.current -= STAMINA_DRAIN; }
+        else { stamina.current = EMPTY; }
+    }
+    else if keyboard_input.just_released(KeyCode::ShiftLeft) || stamina.current == EMPTY {
         speed.current = speed.base;
+    }
+}
+
+pub fn prevent_movement (
+    inventory: Single<&InventoryUi>,
+    mut velocity: Single<&mut Velocity, With<Player>>, 
+) {
+    if !inventory.activated {
         return; 
-    } 
-    
-    speed.current = RUN_SPEED; 
-    stamina.current -= STAMINA_DRAIN;
+    }
+
+    velocity.linvel = Vec3::ZERO;
 }

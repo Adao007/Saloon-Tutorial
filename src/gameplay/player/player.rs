@@ -9,6 +9,7 @@ use crate::gameplay::player::movement::apply_velocity;
 use crate::gameplay::player::stamina::update_stamina;
 use crate::gameplay::player::health::update_health;
 use crate::gameplay::player::stamina::restore_stamina;
+use crate::gameplay::player::movement::prevent_movement;
 
 pub struct PlayerPlugin; 
 impl Plugin for PlayerPlugin {
@@ -32,6 +33,7 @@ impl Plugin for PlayerPlugin {
                 update_stamina,
                 update_health,
                 restore_stamina,
+                prevent_movement,
             ));
     }
 }
@@ -39,4 +41,5 @@ impl Plugin for PlayerPlugin {
 #[derive(Component)]
 pub struct Player{
     pub speed: f32, 
+    pub running: bool,
 } 

@@ -14,7 +14,10 @@ pub fn spawn_player(
 ) {
     let player = commands
         .spawn((
-            Player { speed: 1.0 },
+            Player { 
+                speed: 1.0,
+                running: false,
+             },
             Health {
                 max: 100.0,
                 current: 100.0,
