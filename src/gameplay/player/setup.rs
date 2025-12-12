@@ -1,11 +1,10 @@
-use crate::gameplay::player::{aim::*, health::*, movement::*, player::Player, stamina::*};
+use crate::gameplay::player::{aim::*, health::*, movement::*, player::{Player, PlayerStatus, Status}, stamina::*};
+use crate::gameplay::inventory::inventory::Inventory;
 use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
 
 const WALK_SPEED: f32 = 85.0;
-
-#[derive(Component)]
-pub struct Object;
+const ZERO: f32 = 0.0; 
 
 pub fn spawn_player(
     mut commands: Commands,
@@ -14,14 +13,13 @@ pub fn spawn_player(
 ) {
     let player = commands
         .spawn((
-            Player { 
-                speed: 1.0,
-                running: false,
-             },
+            Player,
+            PlayerStatus { condition: Status::Normal, duration: ZERO},
             Health {
                 max: 100.0,
                 current: 100.0,
             },
+            Inventory { searching: false }, 
             Speed {
                 base: WALK_SPEED,
                 current: WALK_SPEED,
@@ -43,8 +41,7 @@ pub fn spawn_player(
                 angle: 90.0_f32.to_radians(),
                 direction: Vec2::new(0.0, 1.0),
             },
-        ))
-        .id();
+        )).id();
 
     // Spawn Health Bar for Player
     commands
@@ -96,4 +93,3 @@ pub fn spawn_player(
             ));
         });
 }
-

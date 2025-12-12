@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
-const MAP_LENGTH: u32 = 8;
-
 pub fn init_environment(mut commands: Commands, asset_server: Res<AssetServer>) {
     let texture_handle: Handle<Image> = asset_server.load("floors/other_floor_2.png");
     let map_size = TilemapSize { x: 32, y: 16 };

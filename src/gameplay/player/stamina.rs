@@ -1,6 +1,7 @@
 use bevy::prelude::*; 
 use super::player::Player; 
 use crate::gameplay::player::movement::Speed;
+use crate::gameplay::player::player::{PlayerStatus, Status};
 
 const REGEN: f32 = 2.0;
 const WALK_SPEED: f32 = 85.0;
@@ -28,10 +29,13 @@ pub fn update_stamina(
 }
 
 pub fn restore_stamina(
-    stamina_query: Single<(&mut Stamina, &Speed), With<Player>>, 
+    stamina_query: Single<(&PlayerStatus, &mut Stamina, &Speed), With<Player>>, 
     time: Res<Time>,
 ) {
-    let (mut stamina, speed) = stamina_query.into_inner(); 
+    let (status, mut stamina, speed) = stamina_query.into_inner(); 
+    if status.condition == Status::Exhausted {
+        return; 
+    }
 
     if stamina.current >= 100.0 && speed.current != WALK_SPEED {
         return; 
