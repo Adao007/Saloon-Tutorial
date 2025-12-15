@@ -19,7 +19,7 @@ pub fn spawn_player(
                 max: 100.0,
                 current: 100.0,
             },
-            Inventory { searching: false }, 
+            Inventory { items: Vec::new(), searching: false }, 
             Speed {
                 base: WALK_SPEED,
                 current: WALK_SPEED,

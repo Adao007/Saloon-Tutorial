@@ -82,8 +82,12 @@ pub struct ItemDefinition {
     icon: String, 
 }
 
-#[derive(Component)]
-pub struct Item;
+// Contains necessary info for gameplay
+#[derive(Clone, Component, Debug, Deserialize, Serialize)]
+pub struct Item {
+    pub id: String, 
+    pub stack: u8, 
+}
 
 // --- RESOURCES --- 
 #[derive(Default, Resource)]

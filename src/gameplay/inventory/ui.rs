@@ -18,7 +18,7 @@ pub fn setup_ui(mut commands: Commands) {
             Node {
                 left: Val::Percent(5.0),
                 top: Val::Percent(10.0),
-                width: percent(60),
+                width: percent(70),
                 height: percent(80), 
                 align_self: AlignSelf::FlexStart, 
                 justify_self: JustifySelf::Start,
