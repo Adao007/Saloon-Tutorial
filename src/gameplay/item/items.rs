@@ -1,3 +1,4 @@
+use avian2d::{math::*, prelude::*}; 
 use bevy::prelude::*; 
 use std::{collections::HashMap}; 
 use serde::{Deserialize, Serialize}; 
@@ -6,7 +7,7 @@ pub struct ItemPlugin;
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App){
         app
-            .add_systems(Startup, load_items);
+            .add_systems(Startup, (load_items, spawn_items));
     }
 }
 
@@ -89,6 +90,9 @@ pub struct Item {
     pub stack: u8, 
 }
 
+#[derive(Component)]
+pub struct Loot; // Marker for floor items?
+
 // --- RESOURCES --- 
 #[derive(Default, Resource)]
 struct ItemRegistry {
@@ -121,4 +125,21 @@ fn load_items(mut commands: Commands, asset_server: Res<AssetServer>) {
     }
 
     commands.insert_resource(registry);
+}
+
+fn spawn_items(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let item_id = "Bandage".to_string();
+    
+    commands.spawn((
+        Item {id: item_id, stack: 1},
+        Loot, 
+        RigidBody::Static, 
+        Collider::circle(50.0),
+        // Enable collision events for this entity
+        CollisionEventsEnabled,
+        // Read entities coolliding with this entity
+        CollidingEntities::default(),
+        Sprite::from_image(asset_server.load("icons/prototype_loot.png")),
+        Transform::from_xyz(50.0, 50.0, 1.0),
+    ));
 }

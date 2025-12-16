@@ -1,7 +1,8 @@
-use crate::gameplay::player::{aim::*, health::*, movement::*, player::{Player, PlayerStatus, Status}, stamina::*};
-use crate::gameplay::inventory::inventory::Inventory;
+use avian2d::{math::*, prelude::*};
 use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
+use crate::gameplay::player::{aim::*, health::*, movement::*, player::{Player, PlayerStatus, Status}, stamina::*};
+use crate::gameplay::inventory::inventory::Inventory;
 
 const WALK_SPEED: f32 = 85.0;
 const ZERO: f32 = 0.0; 
@@ -20,6 +21,8 @@ pub fn spawn_player(
                 current: 100.0,
             },
             Inventory { items: Vec::new(), searching: false }, 
+            RigidBody::Dynamic,
+            Collider::circle(20.0),
             Speed {
                 base: WALK_SPEED,
                 current: WALK_SPEED,
@@ -34,12 +37,12 @@ pub fn spawn_player(
                 Vec2::new(20.0, -20.0),
             ))),
             MeshMaterial2d(materials.add(Color::from(RED))),
-            Transform::from_xyz(0.0, 0.0, 1.0),
+            Transform::from_xyz(0.0, 0.0, 2.0),
             Velocity { linvel: Vec3::ZERO },
             VisibilityCone {
                 range: 1000.0,
                 angle: 90.0_f32.to_radians(),
-                direction: Vec2::new(0.0, 1.0),
+                direction: Vec2::new(0.0, 0.0),
             },
         )).id();
 

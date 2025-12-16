@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+avian2d = "0.4"
 bevy = "0.17.2"
 bevy_common_assets = { version = "0.14.0", features = ["ron"] }
 bevy_ecs_tilemap = "0.17.0"
