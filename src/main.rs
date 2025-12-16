@@ -9,7 +9,7 @@ fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins, 
-            PhysicsPlugins::default(), 
+            PhysicsPlugins::default().with_length_unit(50.0), 
             TilemapPlugin, 
             GameplayPlugin
         ))

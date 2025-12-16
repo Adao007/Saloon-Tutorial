@@ -5,6 +5,8 @@ use crate::gameplay::player::aim::get_mouse_position;
 use crate::gameplay::player::aim::rotate_aim;
 use crate::gameplay::player::movement::movement;
 use crate::gameplay::player::movement::run;
+use crate::gameplay::player::movement::player_movement;
+use crate::gameplay::player::movement::update_debug_text;
 use crate::gameplay::player::movement::apply_velocity;
 use crate::gameplay::player::stamina::update_stamina;
 use crate::gameplay::player::health::update_health;
@@ -28,14 +30,16 @@ impl Plugin for PlayerPlugin {
             Startup,
             spawn_player,
             )
+            .add_systems(FixedUpdate, (player_movement))
             .add_systems(
             Update,
             (
                 get_mouse_position,
                 rotate_aim.after(get_mouse_position),
-                movement,
-                run,
-                apply_velocity,
+                // movement,
+                // run,
+                // apply_velocity,
+                update_debug_text,
                 update_stamina,
                 update_health,
                 restore_stamina,
