@@ -14,13 +14,8 @@ const EMPTY: f32 = 0.0;
 
 // --- COMPONENTS --- 
 #[derive(Component)]
-pub struct Velocity {
-    pub linvel: Vec3,
-}
-
-#[derive(Component)]
 pub struct Speed {
-    pub base: f32, 
+    pub base: f32,
     pub current: f32, 
 }
 
@@ -32,49 +27,17 @@ pub struct TouchedEntities(EntityHashSet);
 #[derive(Component)]
 pub struct DebugText; 
 
-// --- SYSTEMS ---
-pub fn movement(
-    mut query: Query<(&mut Velocity, &Speed), With<Player>>, 
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-) {
-    for (mut velocity, speed) in &mut query {
-        let mut direction = Vec3::ZERO; 
-
-        if keyboard_input.pressed(KeyCode::KeyW) { direction.y += DIRECTION; }
-        if keyboard_input.pressed(KeyCode::KeyS) { direction.y -= DIRECTION; }
-        if keyboard_input.pressed(KeyCode::KeyA) { direction.x -= DIRECTION; }
-        if keyboard_input.pressed(KeyCode::KeyD) { direction.x += DIRECTION; }
-
-        if direction.length() > 0.0 {
-            direction = direction.normalize(); 
-            velocity.linvel = direction * speed.current; 
-        } 
-        else {
-            velocity.linvel = Vec3::ZERO; 
-        }
-    }
-}
-
-pub fn apply_velocity(
-    mut query: Query<(&mut Transform, &Velocity), With<Player>>, 
-    time: Res<Time>, 
-) {
-    for (mut transform, velocity) in &mut query {
-        transform.translation += velocity.linvel * time.delta_secs(); 
-    }
-}
-
 pub fn run(
-    player_query: Single<(&mut Stamina, &mut Speed, &Velocity, &mut PlayerStatus), With<Player>>,
+    player_query: Single<(&mut Stamina, &mut Speed, &mut PlayerStatus), With<Player>>,
     inventory: Single<&Inventory>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
-    let (mut stamina, mut speed, velocity, mut player) = player_query.into_inner(); 
+    let (mut stamina, mut speed, mut player) = player_query.into_inner(); 
     if player.condition != Status::Normal || inventory.searching {
         return; 
     }
 
-    if keyboard_input.pressed(KeyCode::ShiftLeft) && velocity.linvel != Vec3::ZERO {
+    if keyboard_input.pressed(KeyCode::ShiftLeft) {
         speed.current = RUN_SPEED; 
         if stamina.current > EMPTY { stamina.current -= STAMINA_DRAIN; }
         else { 
@@ -90,11 +53,11 @@ pub fn run(
 
 pub fn prevent_movement (
     inventory: Single<&Inventory>,  
-    mut velocity: Single<&mut Velocity, With<Player>>, 
+    // mut velocity: Single<&mut Velocity, With<Player>>, 
 ) {
     if !inventory.searching {
         return; 
     }
 
-    velocity.linvel = Vec3::ZERO; 
+    // velocity.linvel = Vec3::ZERO; 
 }

@@ -1,5 +1,9 @@
 use avian2d::{math::*, prelude::*}; 
-use bevy::{ecs::query::Has, prelude::*}; 
+use bevy::{ecs::query::Has, prelude::*};
+use crate::gameplay::player::movement::Speed;
+use crate::gameplay::player::player::Player;  
+
+const RUN_SPEED: f32 = 1.5; 
 
 pub struct PlayerControllerPlugin; 
 
@@ -9,7 +13,6 @@ impl Plugin for PlayerControllerPlugin {
             .add_message::<MovementAction>().add_systems(
             Update, (
                     keyboard_input, 
-                    update_grounded, 
                     movement, 
                     apply_movement_damping
                 )
@@ -20,9 +23,9 @@ impl Plugin for PlayerControllerPlugin {
 /* --- MESSAGES --- */
 #[derive(Message)]
 pub enum MovementAction {
-    Walk(Scalar), 
+    Gait(Vec2), 
     Jump,
-    Run(Scalar), 
+    Run(Vec2), 
 }
 
 /*  --- COMPONENTS --- */  
@@ -46,12 +49,6 @@ pub struct MovementDampingFactor(Scalar);
 #[derive(Component)]
 pub struct JumpImpulse(Scalar); 
 
-// The max angle a slope can have for a character controller
-// to be ablet to climb and jump. If the slope is steeper than this angle, 
-// the Character will slide down. 
-#[derive(Component)]
-pub struct MaxSlopeAngle(Scalar); 
-
 // Bundle that contains the components needed for a basic 
 // dynamic character controller. 
 #[derive(Bundle)]
@@ -70,7 +67,6 @@ pub struct MovementBundle {
     accleration: MovementAcceleration, 
     damping: MovementDampingFactor, 
     jump_impulse: JumpImpulse,
-    max_slope_angle: MaxSlopeAngle,
 }
 
 impl MovementBundle {
@@ -78,20 +74,18 @@ impl MovementBundle {
         accleration: Scalar,
         damping: Scalar,
         jump_impulse: Scalar,
-        max_slope_angle: Scalar,
     ) -> Self {
         Self {
             accleration: MovementAcceleration(accleration),
             damping: MovementDampingFactor(damping), 
             jump_impulse: JumpImpulse(jump_impulse), 
-            max_slope_angle: MaxSlopeAngle(max_slope_angle),
         }
     }
 }
 
 impl Default for MovementBundle {
     fn default() -> Self {
-        Self::new(30.0, 0.9, 7.0, PI * 0.45)
+        Self::new(30.0, 0.9, 7.0)
     }
 }
 
@@ -117,9 +111,8 @@ impl PlayerControllerBundle {
         accleration: Scalar,
         damping: Scalar,
         jump_impulse: Scalar,
-        max_slope_angle: Scalar,
     ) -> Self {
-        self.movement = MovementBundle::new(accleration, damping, jump_impulse, max_slope_angle);
+        self.movement = MovementBundle::new(accleration, damping, jump_impulse);
         self 
     }
 }
@@ -130,13 +123,22 @@ fn keyboard_input(
     mut movement_writer: MessageWriter<MovementAction>,
     keyboard_input: Res<ButtonInput<KeyCode>>, 
 ) {
+    let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]); 
+    let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]); 
     let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]); 
-    let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]); 
-    let horizontal = right as i8 - left as i8; 
-    let direction = horizontal as Scalar; 
+    let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
 
-    if direction != 0.0 {
-        movement_writer.write(MovementAction::Walk(direction)); 
+    let vertical = (up as i8 - down as i8) as Scalar;  
+    let horizontal = (right as i8 - left as i8) as Scalar; 
+    let direction = Vec2::new(horizontal, vertical).normalize(); 
+
+    if direction != Vec2::ZERO && !keyboard_input.pressed(KeyCode::ShiftLeft) {
+        println!("direction: {:?}", direction); 
+        movement_writer.write(MovementAction::Gait(direction)); 
+    }
+    else if direction != Vec2::ZERO && keyboard_input.pressed(KeyCode::ShiftLeft) {
+        println!("RUNNING"); 
+        movement_writer.write(MovementAction::Run(direction)); 
     }
 
     if keyboard_input.just_pressed(KeyCode::Space){
@@ -145,35 +147,11 @@ fn keyboard_input(
 }
 
 // Contains gamepad_inputs 
-
-// Updates the ['Grounded'] status for character controllers 
-fn update_grounded(
-    mut commands: Commands,
-    mut query: Query<(Entity, &ShapeHits, &Rotation, Option<&MaxSlopeAngle>), With<PlayerController>>,
-) {
-    for (entity, hits, rotation, max_slope_angle) in query.iter_mut() {
-        let is_grounded = hits.iter().any(|hit| {
-            if let Some(angle) = max_slope_angle {
-                (rotation * -hit.normal2).angle_to(Vector::Y).abs() <= angle.0 
-            } 
-            else {
-                true
-            }
-        }); 
-
-        if is_grounded {
-            commands.entity(entity).insert(Grounded); 
-        } 
-        else {
-            commands.entity(entity).remove::<Grounded>(); 
-        }
-    }
-}
-
 fn movement(
     time: Res<Time>,
     mut movement_reader: MessageReader<MovementAction>,
     mut controllers: Query<(&MovementAcceleration, &JumpImpulse, &mut LinearVelocity, Has<Grounded>,)>, 
+    speed: Single<&Speed, With<Player>>,
 ) {
     // Precision is adjusted so that the example works with 
     // both 'f32' and 'f64' features. Otherwise remove this. 
@@ -182,8 +160,9 @@ fn movement(
     for event in movement_reader.read() {
         for (movement_acceleration, jump_impulse, mut linear_velocity, is_grounded) in controllers.iter_mut() {
             match event {
-                MovementAction::Walk(direction) => {
-                    linear_velocity.x += *direction * movement_acceleration.0 * delta_time;
+                MovementAction::Gait(direction) => {
+                    linear_velocity.x += direction.x * movement_acceleration.0 * speed.current * delta_time;
+                    linear_velocity.y += direction.y * movement_acceleration.0 * speed.current * delta_time; 
                 }
                 MovementAction::Jump => {
                     if is_grounded {
@@ -206,5 +185,6 @@ fn apply_movement_damping(
 
     for (damping_factor, mut linear_velocity) in query.iter_mut() {
         linear_velocity.x *= 1.0 / (1.0 + damping_factor.0 * delta_time); 
+        linear_velocity.y *= 1.0 / (1.0 + damping_factor.0 * delta_time);
     }
 }

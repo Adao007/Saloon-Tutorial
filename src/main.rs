@@ -1,10 +1,7 @@
 use avian2d::{math::*, prelude::*};
 use bevy::{asset::RenderAssetUsages, prelude::*, render::render_resource::PrimitiveTopology};
-use bevy::prelude::*;
-use bevy_ecs_tilemap::prelude::*;
-use gameplay::gameplay::GameplayPlugin;
-
 use crate::gameplay::controller::plugin::*;
+use crate::gameplay::gameplay::GameplayPlugin;
 
 mod gameplay;
 
@@ -15,7 +12,7 @@ fn main() {
             PhysicsPlugins::default().with_length_unit(50.0), 
             PlayerControllerPlugin, 
             // TilemapPlugin, 
-            // GameplayPlugin
+            GameplayPlugin,
         ))
         .insert_resource(ClearColor(Color::srgb(0.05, 0.05, 0.1)))
         .insert_resource(Gravity(Vector::NEG_Y * 1000.0))
@@ -28,22 +25,21 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    // Player
-    commands.spawn((
-        Mesh2d(meshes.add(Capsule2d::new(12.5, 20.0))),
-        MeshMaterial2d(materials.add(Color::srgb(0.2, 0.7, 0.9))),
-        Transform::from_xyz(0.0, -100.0, 0.0),
-        PlayerControllerBundle::new(Collider::capsule(12.5, 20.0)).with_movement(
-            1250.0,
-            5.0,
-            400.0,
-            (30.0 as Scalar).to_radians(),
-        ),
-        Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
-        Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
-        ColliderDensity(2.0),
-        GravityScale(1.5),
-    ));
+    // // Player
+    // commands.spawn((
+    //     Mesh2d(meshes.add(Capsule2d::new(12.5, 20.0))),
+    //     MeshMaterial2d(materials.add(Color::srgb(0.2, 0.7, 0.9))),
+    //     Transform::from_xyz(0.0, -100.0, 0.0),
+    //     PlayerControllerBundle::new(Collider::capsule(12.5, 20.0)).with_movement(
+    //         1250.0,
+    //         5.0,
+    //         400.0,
+    //     ),
+    //     Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
+    //     Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
+    //     ColliderDensity(2.0),
+    //     GravityScale(0.0),
+    // ));
 
     // A cube to move around
     commands.spawn((
@@ -158,7 +154,4 @@ fn setup(
         RigidBody::Static,
         ramp_collider,
     ));
-
-        // Camera
-    commands.spawn(Camera2d);
 }

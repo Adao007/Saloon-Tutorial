@@ -3,9 +3,7 @@ use crate::gameplay::player::aim::MousePos;
 use crate::gameplay::player::setup::spawn_player;
 use crate::gameplay::player::aim::get_mouse_position;
 use crate::gameplay::player::aim::rotate_aim;
-use crate::gameplay::player::movement::movement;
 use crate::gameplay::player::movement::run;
-use crate::gameplay::player::movement::apply_velocity;
 use crate::gameplay::player::stamina::update_stamina;
 use crate::gameplay::player::health::update_health;
 use crate::gameplay::player::stamina::restore_stamina;
@@ -33,14 +31,13 @@ impl Plugin for PlayerPlugin {
             (
                 get_mouse_position,
                 rotate_aim.after(get_mouse_position),
-                // movement,
-                // run,
+                run,
                 // apply_velocity,
                 update_stamina,
                 update_health,
                 restore_stamina,
                 exhaust,
-                prevent_movement.after(movement).after(run),
+                prevent_movement.after(run),
             ));
     }
 }

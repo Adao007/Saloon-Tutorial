@@ -4,30 +4,31 @@ use bevy::{
     asset::RenderAssetUsages, color::palettes::tailwind, ecs::entity::EntityHashSet,
     mesh::PrimitiveTopology, prelude::*,
 };
+use crate::gameplay::controller::plugin::PlayerControllerBundle;
 use crate::gameplay::player::{aim::*, health::*, movement::*, player::{Player, PlayerStatus, Status}, stamina::*};
 use crate::gameplay::inventory::inventory::Inventory;
 
-const WALK_SPEED: f32 = 85.0;
+const WALK_SPEED: f32 = 1.0;
 const ZERO: f32 = 0.0; 
+
+// Sizing and Physics Variables
+const ACCLERATION: f32 = 1000.0; 
+const DAMPING: f32 = 5.0; 
+const JUMP_IMPULSE: f32 = 400.0; 
+const RADIUS: f32 = 30.0;
 
 // --- BUNDLES --- 
 #[derive(Bundle)]
 struct PlayerBundle {
     player: Player, 
+    health: Health,
+    inventory: Inventory,  
     mesh: Mesh2d,
     material: MeshMaterial2d<ColorMaterial>,
-    collider: Collider,
-    rigid_body: RigidBody,
-    interpolation: TransformInterpolation,
-    touched: TouchedEntities,
-    colliding: CollidingEntities,
-    status: PlayerStatus,
-    health: Health,
-    inventory: Inventory, 
-    speed: Speed, 
+    speed: Speed,
     stamina: Stamina,
+    status: PlayerStatus,
     transform: Transform,
-    velocity: Velocity,
     visibility: VisibilityCone, 
 }
 
@@ -36,39 +37,41 @@ pub fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let shape = Circle::new(30.0);
+    let shape = Circle::new(RADIUS);
     let player = commands
-        .spawn( PlayerBundle {
-            player: Player,
-            mesh: Mesh2d(meshes.add(shape)),
-            material: MeshMaterial2d(materials.add(Color::from(RED))),
-            collider: Collider::from(shape),
-            rigid_body: RigidBody::Kinematic,
-            interpolation: TransformInterpolation,
-            touched: TouchedEntities::default(),
-            colliding: CollidingEntities::default(), 
-            status: PlayerStatus { condition: Status::Normal, duration: ZERO},
-            health: Health {
-                max: 100.0,
-                current: 100.0,
+        .spawn((
+            PlayerBundle {
+                player: Player,
+                health: Health {
+                    max: 100.0,
+                    current: 100.0,
+                },
+                inventory: Inventory { items: Vec::new(), searching: false }, 
+                mesh: Mesh2d(meshes.add(shape)),
+                material: MeshMaterial2d(materials.add(Color::from(RED))),
+                speed: Speed {base: WALK_SPEED, current: WALK_SPEED},
+                stamina: Stamina {
+                    max: 100.0,
+                    current: 100.0,
+                },
+                status: PlayerStatus { condition: Status::Normal, duration: ZERO},
+                transform: Transform::from_xyz(100.0, 0.0, 2.0),
+                visibility: VisibilityCone {
+                    range: 1000.0,
+                    angle: 90.0_f32.to_radians(),
+                    direction: Vec2::new(0.0, 0.0),
+                },
             },
-            inventory: Inventory { items: Vec::new(), searching: false }, 
-            speed: Speed {
-                base: WALK_SPEED,
-                current: WALK_SPEED,
-            },
-            stamina: Stamina {
-                max: 100.0,
-                current: 100.0,
-            },
-            transform: Transform::from_xyz(0.0, 0.0, 2.0),
-            velocity: Velocity { linvel: Vec3::ZERO },
-            visibility: VisibilityCone {
-                range: 1000.0,
-                angle: 90.0_f32.to_radians(),
-                direction: Vec2::new(0.0, 0.0),
-            },
-    }).id();
+            PlayerControllerBundle::new(Collider::circle(RADIUS)).with_movement(
+                ACCLERATION,
+                DAMPING,
+                JUMP_IMPULSE,
+            ),
+            ColliderDensity(2.0),
+            Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
+            GravityScale(0.0),
+            Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
+        )).id();
 
     // Spawn Health Bar for Player
     commands
