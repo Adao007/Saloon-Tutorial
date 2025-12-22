@@ -1,5 +1,6 @@
 use avian2d::{math::*, prelude::*};
 use bevy::{asset::RenderAssetUsages, prelude::*, render::render_resource::PrimitiveTopology};
+use bevy_ecs_tilemap::TilemapPlugin;
 use crate::gameplay::controller::plugin::*;
 use crate::gameplay::gameplay::GameplayPlugin;
 
@@ -11,7 +12,7 @@ fn main() {
             DefaultPlugins, 
             PhysicsPlugins::default().with_length_unit(50.0), 
             PlayerControllerPlugin, 
-            // TilemapPlugin, 
+            TilemapPlugin, 
             GameplayPlugin,
         ))
         .insert_resource(ClearColor(Color::srgb(0.05, 0.05, 0.1)))
@@ -25,22 +26,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    // // Player
-    // commands.spawn((
-    //     Mesh2d(meshes.add(Capsule2d::new(12.5, 20.0))),
-    //     MeshMaterial2d(materials.add(Color::srgb(0.2, 0.7, 0.9))),
-    //     Transform::from_xyz(0.0, -100.0, 0.0),
-    //     PlayerControllerBundle::new(Collider::capsule(12.5, 20.0)).with_movement(
-    //         1250.0,
-    //         5.0,
-    //         400.0,
-    //     ),
-    //     Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
-    //     Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
-    //     ColliderDensity(2.0),
-    //     GravityScale(0.0),
-    // ));
-
     // A cube to move around
     commands.spawn((
         Sprite {
@@ -48,7 +33,7 @@ fn setup(
             custom_size: Some(Vec2::new(30.0, 30.0)),
             ..default()
         },
-        Transform::from_xyz(50.0, -100.0, 0.0),
+        Transform::from_xyz(50.0, -100.0, 1.0),
         RigidBody::Dynamic,
         Collider::rectangle(30.0, 30.0),
     ));
@@ -60,7 +45,7 @@ fn setup(
             custom_size: Some(Vec2::new(1100.0, 50.0)),
             ..default()
         },
-        Transform::from_xyz(0.0, -175.0, 0.0),
+        Transform::from_xyz(0.0, -175.0, 1.0),
         RigidBody::Static,
         Collider::rectangle(1100.0, 50.0),
     ));
@@ -70,7 +55,7 @@ fn setup(
             custom_size: Some(Vec2::new(300.0, 25.0)),
             ..default()
         },
-        Transform::from_xyz(175.0, -35.0, 0.0),
+        Transform::from_xyz(175.0, -35.0, 1.0),
         RigidBody::Static,
         Collider::rectangle(300.0, 25.0),
     ));
@@ -80,7 +65,7 @@ fn setup(
             custom_size: Some(Vec2::new(300.0, 25.0)),
             ..default()
         },
-        Transform::from_xyz(-175.0, 0.0, 0.0),
+        Transform::from_xyz(-175.0, 0.0, 1.0),
         RigidBody::Static,
         Collider::rectangle(300.0, 25.0),
     ));
@@ -90,7 +75,7 @@ fn setup(
             custom_size: Some(Vec2::new(150.0, 80.0)),
             ..default()
         },
-        Transform::from_xyz(475.0, -110.0, 0.0),
+        Transform::from_xyz(475.0, -110.0, 1.0),
         RigidBody::Static,
         Collider::rectangle(150.0, 80.0),
     ));
@@ -100,7 +85,7 @@ fn setup(
             custom_size: Some(Vec2::new(150.0, 80.0)),
             ..default()
         },
-        Transform::from_xyz(-475.0, -110.0, 0.0),
+        Transform::from_xyz(-475.0, -110.0, 1.0),
         RigidBody::Static,
         Collider::rectangle(150.0, 80.0),
     ));
@@ -126,7 +111,7 @@ fn setup(
     commands.spawn((
         Mesh2d(meshes.add(ramp_mesh)),
         MeshMaterial2d(materials.add(Color::srgb(0.4, 0.4, 0.5))),
-        Transform::from_xyz(-275.0, -150.0, 0.0),
+        Transform::from_xyz(-275.0, -150.0, 1.0),
         RigidBody::Static,
         ramp_collider,
     ));
@@ -150,7 +135,7 @@ fn setup(
     commands.spawn((
         Mesh2d(meshes.add(ramp_mesh)),
         MeshMaterial2d(materials.add(Color::srgb(0.4, 0.4, 0.5))),
-        Transform::from_xyz(380.0, -110.0, 0.0),
+        Transform::from_xyz(380.0, -110.0, 1.0),
         RigidBody::Static,
         ramp_collider,
     ));

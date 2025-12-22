@@ -36,11 +36,16 @@ impl Inventory {
     }    
 }
 
+#[derive(Component)]
+pub struct Searching; 
+
 // --- SYSTEMS --- 
 fn activate_player_inventory(
     keyboard_input: Res<ButtonInput<KeyCode>>, 
-    mut visibility_query: Query<(&mut Visibility, &mut InventoryUi)>,
+    player: Single<Entity, With<Player>>,
+    mut commands: Commands,
     mut inventory: Single<&mut Inventory, With<Player>>, 
+    mut visibility_query: Query<(&mut Visibility, &mut InventoryUi)>,
 ) {
     if !keyboard_input.just_pressed(KeyCode::KeyI) {
         return; 
@@ -49,6 +54,13 @@ fn activate_player_inventory(
     for (mut visibility, mut ui) in visibility_query.iter_mut() {
         visibility.toggle_visible_hidden();
         ui.activated = !ui.activated;
-        inventory.searching = !inventory.searching;
+        inventory.searching = !inventory.searching; 
+        
+        if inventory.searching {
+            commands.entity(*player).insert(Searching); 
+        }
+        else {
+            commands.entity(*player).remove::<Searching>(); 
+        }
     }
 }

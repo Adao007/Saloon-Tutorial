@@ -4,7 +4,6 @@ use bevy::{
     mesh::PrimitiveTopology, prelude::*,
 };
 use bevy_ecs_tilemap::prelude::*;
-use crate::gameplay::player::movement::DebugText;
 
 pub fn init_environment(mut commands: Commands, asset_server: Res<AssetServer>) {
     let texture_handle: Handle<Image> = asset_server.load("floors/floor4_no_hole.png");

@@ -1,7 +1,8 @@
 use bevy::prelude::*; 
-use super::player::Player; 
-use crate::gameplay::player::movement::Speed;
-use crate::gameplay::player::player::{PlayerStatus, Status};
+use crate::gameplay::player::{
+    player::{Player, PlayerStatus, Status},
+    setup::Speed,
+};
 
 const REGEN: f32 = 2.0;
 const WALK_SPEED: f32 = 85.0;

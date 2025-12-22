@@ -1,9 +1,10 @@
 use avian2d::{math::*, prelude::*}; 
 use bevy::{ecs::query::Has, prelude::*};
-use crate::gameplay::player::movement::Speed;
 use crate::gameplay::player::player::Player;  
+use crate::gameplay::player::setup::Speed;
+use crate::gameplay::inventory::inventory::Searching;
 
-const RUN_SPEED: f32 = 1.5; 
+const MAX_SPEED: f32 = 10.0; 
 
 pub struct PlayerControllerPlugin; 
 
@@ -130,15 +131,11 @@ fn keyboard_input(
 
     let vertical = (up as i8 - down as i8) as Scalar;  
     let horizontal = (right as i8 - left as i8) as Scalar; 
-    let direction = Vec2::new(horizontal, vertical).normalize(); 
+    let direction = Vec2::new(horizontal, vertical).normalize_or_zero(); // Ensure or_zero to prevent NaN clash with Avian
 
-    if direction != Vec2::ZERO && !keyboard_input.pressed(KeyCode::ShiftLeft) {
+    if direction != Vec2::ZERO {
         println!("direction: {:?}", direction); 
         movement_writer.write(MovementAction::Gait(direction)); 
-    }
-    else if direction != Vec2::ZERO && keyboard_input.pressed(KeyCode::ShiftLeft) {
-        println!("RUNNING"); 
-        movement_writer.write(MovementAction::Run(direction)); 
     }
 
     if keyboard_input.just_pressed(KeyCode::Space){
@@ -150,7 +147,7 @@ fn keyboard_input(
 fn movement(
     time: Res<Time>,
     mut movement_reader: MessageReader<MovementAction>,
-    mut controllers: Query<(&MovementAcceleration, &JumpImpulse, &mut LinearVelocity, Has<Grounded>,)>, 
+    mut controllers: Query<(&MovementAcceleration, &JumpImpulse, &mut LinearVelocity, Has<Grounded>), (With<Player>, Without<Searching>)>, 
     speed: Single<&Speed, With<Player>>,
 ) {
     // Precision is adjusted so that the example works with 
@@ -161,8 +158,8 @@ fn movement(
         for (movement_acceleration, jump_impulse, mut linear_velocity, is_grounded) in controllers.iter_mut() {
             match event {
                 MovementAction::Gait(direction) => {
-                    linear_velocity.x += direction.x * movement_acceleration.0 * speed.current * delta_time;
-                    linear_velocity.y += direction.y * movement_acceleration.0 * speed.current * delta_time; 
+                    linear_velocity.x += direction.x * speed.current * movement_acceleration.0 * delta_time;
+                    linear_velocity.y += direction.y * speed.current * movement_acceleration.0 * delta_time; 
                 }
                 MovementAction::Jump => {
                     if is_grounded {
@@ -179,12 +176,15 @@ fn movement(
 fn apply_movement_damping(
     time: Res<Time>, 
     mut query: Query<(&MovementDampingFactor, &mut LinearVelocity)>, 
+    speed: Single<&Speed, With<Player>>,
 ) {
     // Precision is adjusted
     let delta_time = time.delta_secs_f64().adjust_precision(); 
+    let speed_ratio = (speed.current / MAX_SPEED).min(1.0);
+    let damping_multiplier = 1.0 - speed_ratio;
 
     for (damping_factor, mut linear_velocity) in query.iter_mut() {
-        linear_velocity.x *= 1.0 / (1.0 + damping_factor.0 * delta_time); 
-        linear_velocity.y *= 1.0 / (1.0 + damping_factor.0 * delta_time);
+        linear_velocity.x *= 1.0 / (1.0 + damping_factor.0 * damping_multiplier * delta_time); 
+        linear_velocity.y *= 1.0 / (1.0 + damping_factor.0 * damping_multiplier * delta_time);
     }
 }

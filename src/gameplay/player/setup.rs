@@ -12,7 +12,7 @@ const WALK_SPEED: f32 = 1.0;
 const ZERO: f32 = 0.0; 
 
 // Sizing and Physics Variables
-const ACCLERATION: f32 = 1000.0; 
+const ACCLERATION: f32 = 500.0; 
 const DAMPING: f32 = 5.0; 
 const JUMP_IMPULSE: f32 = 400.0; 
 const RADIUS: f32 = 30.0;
@@ -30,6 +30,13 @@ struct PlayerBundle {
     status: PlayerStatus,
     transform: Transform,
     visibility: VisibilityCone, 
+}
+
+// --- COMPONENTS --- 
+#[derive(Component)]
+pub struct Speed {
+    pub base: f32,
+    pub current: f32, 
 }
 
 pub fn spawn_player(

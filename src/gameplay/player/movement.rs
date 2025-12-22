@@ -3,27 +3,16 @@ use bevy::{ecs::entity::EntityHashSet, prelude::*};
 use serde::{Deserialize, Serialize};
 use crate::gameplay::inventory::inventory::Inventory;
 use super::{
-    stamina::Stamina,
     player::{Player, PlayerStatus, Status},
+    setup::Speed,
+    stamina::Stamina,
 };
 
-const DIRECTION: f32 = 1.0; 
-const RUN_SPEED: f32 = 170.0;
+const RUN_SPEED: f32 = 1.5;
 const STAMINA_DRAIN: f32 = 0.25; 
 const EMPTY: f32 = 0.0;
 
 // --- COMPONENTS --- 
-#[derive(Component)]
-pub struct Speed {
-    pub base: f32,
-    pub current: f32, 
-}
-
-// Entities touched during the last "move and slide" call. Stored for debug printing. 
-#[derive(Component, Default, Deref, DerefMut, Reflect, Deserialize, Serialize)]
-#[reflect(Component, Serialize, Deserialize)]
-pub struct TouchedEntities(EntityHashSet);
-
 #[derive(Component)]
 pub struct DebugText; 
 
