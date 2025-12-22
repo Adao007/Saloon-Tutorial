@@ -1,13 +1,17 @@
 use avian2d::{math::*, prelude::*}; 
 use bevy::prelude::*; 
+use crate::gameplay::player::player::Player;
 use std::{collections::HashMap}; 
 use serde::{Deserialize, Serialize}; 
+
+const LOOT_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 
 pub struct ItemPlugin; 
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App){
         app
-            .add_systems(Startup, (load_items, spawn_items));
+            .add_systems(Startup, (load_items, spawn_items))
+            .add_systems(Update, detect_loot);
     }
 }
 
@@ -90,8 +94,16 @@ pub struct Item {
     pub stack: u8, 
 }
 
+// Marker for floor items?
 #[derive(Component)]
-pub struct Loot; // Marker for floor items?
+pub struct Loot; 
+
+// Loot close enough to player for pickup
+#[derive(Component)]
+pub struct DetectedLoot {
+    items: Vec<Entity>, 
+    index: usize, 
+}
 
 // --- RESOURCES --- 
 #[derive(Default, Resource)]
@@ -129,17 +141,31 @@ fn load_items(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn spawn_items(mut commands: Commands, asset_server: Res<AssetServer>) {
     let item_id = "Bandage".to_string();
-    
+for i in 0..8 {  
     commands.spawn((
-        Item {id: item_id, stack: 1},
+        Item {id: item_id.clone(), stack: 1},
         Loot, 
         RigidBody::Static, 
-        Collider::circle(50.0),
+        Collider::circle(LOOT_SIZE.x / 2.0),
+        // Sends collision events but allows other bodies to pass through them
+        Sensor,
         // Enable collision events for this entity
         CollisionEventsEnabled,
-        // Read entities coolliding with this entity
-        CollidingEntities::default(),
-        Sprite::from_image(asset_server.load("icons/prototype_loot.png")),
+        Sprite {
+            image: asset_server.load("icons/prototype_loot.png"), 
+            custom_size: Some(LOOT_SIZE),
+            ..default()
+        }, 
         Transform::from_xyz(50.0, 50.0, 1.0),
     ));
+}
+}
+
+fn detect_loot (
+    mut collision_reader: MessageReader<CollisionStart>
+) {
+    for event in collision_reader.read() {
+        // collider1 is the entity of the items
+        println!("{} and {} started colliding", event.collider1, event.collider2); 
+    }
 }

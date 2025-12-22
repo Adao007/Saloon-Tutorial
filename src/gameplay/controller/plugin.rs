@@ -134,7 +134,7 @@ fn keyboard_input(
     let direction = Vec2::new(horizontal, vertical).normalize_or_zero(); // Ensure or_zero to prevent NaN clash with Avian
 
     if direction != Vec2::ZERO {
-        println!("direction: {:?}", direction); 
+        // DEBUG LINE: println!("direction: {:?}", direction); 
         movement_writer.write(MovementAction::Gait(direction)); 
     }
 

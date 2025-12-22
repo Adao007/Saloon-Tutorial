@@ -4,7 +4,6 @@ use crate::gameplay::inventory::ui::setup_ui;
 use crate::gameplay::inventory::ui::InventoryUi;
 use crate::gameplay::item::items::Item;
 use crate::gameplay::player::player::Player;
-use std::collections::HashMap;
 
 pub struct InventoryPlugin;
 impl Plugin for InventoryPlugin {
