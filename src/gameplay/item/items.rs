@@ -1,8 +1,12 @@
 use avian2d::{math::*, prelude::*}; 
 use bevy::prelude::*; 
-use crate::gameplay::player::player::Player;
 use std::{collections::HashMap}; 
 use serde::{Deserialize, Serialize}; 
+
+// --- PROJECT CRATES ---
+use crate::gameplay::player::player::Player;
+use crate::gameplay::player::setup::Layer;
+use crate::gameplay::player::setup::InteractionSensor;
 
 const LOOT_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 
@@ -10,8 +14,8 @@ pub struct ItemPlugin;
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App){
         app
-            .add_systems(Startup, (load_items, spawn_items))
-            .add_systems(Update, detect_loot);
+            .add_systems(Startup, (load_items, spawn_items));
+            // .add_systems(Update, detect_loot);
     }
 }
 
@@ -101,8 +105,8 @@ pub struct Loot;
 // Loot close enough to player for pickup
 #[derive(Component)]
 pub struct DetectedLoot {
-    items: Vec<Entity>, 
-    index: usize, 
+    pub items: Vec<Entity>, 
+    pub index: usize, 
 }
 
 // --- RESOURCES --- 
@@ -147,25 +151,51 @@ for i in 0..8 {
         Loot, 
         RigidBody::Static, 
         Collider::circle(LOOT_SIZE.x / 2.0),
-        // Sends collision events but allows other bodies to pass through them
-        Sensor,
-        // Enable collision events for this entity
-        CollisionEventsEnabled,
+        CollisionEventsEnabled, // Enable collision events for this entity
+        CollisionLayers::new(
+            [Layer::Item], // Does not collide with
+            [Layer::InteractionSensor], // collides with
+        ),
+        Sensor, // Sends collision events but allows other bodies to pass through them
         Sprite {
             image: asset_server.load("icons/prototype_loot.png"), 
             custom_size: Some(LOOT_SIZE),
             ..default()
         }, 
-        Transform::from_xyz(50.0, 50.0, 1.0),
-    ));
+        Transform::from_xyz(150.0, 150.0, 1.0),
+    ))
+    .observe(loot_detection); 
 }
 }
 
-fn detect_loot (
-    mut collision_reader: MessageReader<CollisionStart>
+// EVENT SYSTEM FOR LOOT DETECTION
+fn loot_detection (
+    event: On<CollisionStart>, 
+    // over: On<CollisionEnd>,
+    sensor_query: Query<&InteractionSensor>,
+    loot_query: Query<&Item, With<Loot>>,
 ) {
-    for event in collision_reader.read() {
-        // collider1 is the entity of the items
-        println!("{} and {} started colliding", event.collider1, event.collider2); 
+    let loot = event.collider1;         // WANT TO CHECK FOR ITEM/LOOT ENTITY 
+    let other_entity = event.collider2; // WANT TO CHECK FOR PLAYER'S SENSOR ENTITY 
+
+    // CHECK IF ENTITIES ARE LOOT AND PLAYER
+    if sensor_query.contains(other_entity) && loot_query.contains(loot) {
+        println!("EVENT-BASED DETECTION: {other_entity} is near item: {loot}"); 
     }
 }
+
+// EVENT SYSTEM FOR LOOT BECOMING UNDETECTED -- TODO!
+
+// MESSAGING SYSTEM FOR LOOT DETECTION 
+// fn detect_loot (
+//     mut collision_reader: MessageReader<CollisionStart>, 
+//     mut collision_ended: MessageReader<CollisionEnd>, 
+//     mut detected_query: Query<&mut DetectedLoot, With<Player>>, // Filling your mind with the nearby items, hmm mmh 
+//     player_query: Query<Entity, With<Player>>, 
+//     item_query: Query<(), With<Loot>>, 
+// ) {
+//     for event in collision_reader.read() {
+//         // collider1 is the entity of the items
+//         println!("{} and {} started colliding", event.collider1, event.collider2); 
+//     }
+// }

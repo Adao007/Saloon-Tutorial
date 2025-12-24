@@ -7,6 +7,7 @@ use bevy::{
 use crate::gameplay::controller::plugin::PlayerControllerBundle;
 use crate::gameplay::player::{aim::*, health::*, movement::*, player::{Player, PlayerStatus, Status}, stamina::*};
 use crate::gameplay::inventory::inventory::Inventory;
+use crate::gameplay::item::items::DetectedLoot;
 
 const WALK_SPEED: f32 = 1.0;
 const ZERO: f32 = 0.0; 
@@ -21,6 +22,7 @@ const RADIUS: f32 = 30.0;
 #[derive(Bundle)]
 struct PlayerBundle {
     player: Player, 
+    detected_items: DetectedLoot,
     health: Health,
     inventory: Inventory,  
     mesh: Mesh2d,
@@ -32,7 +34,20 @@ struct PlayerBundle {
     visibility: VisibilityCone, 
 }
 
+// --- ENUMS ---
+#[derive(PhysicsLayer, Default)] 
+pub enum Layer {
+    #[default]
+    Default, 
+    InteractionSensor, 
+    Item, 
+    Player,
+}
+
 // --- COMPONENTS --- 
+#[derive(Component)]
+pub struct InteractionSensor; 
+
 #[derive(Component)]
 pub struct Speed {
     pub base: f32,
@@ -49,6 +64,10 @@ pub fn spawn_player(
         .spawn((
             PlayerBundle {
                 player: Player,
+                detected_items: DetectedLoot {
+                    items: Vec::new(), 
+                    index: 0,
+                },
                 health: Health {
                     max: 100.0,
                     current: 100.0,
@@ -78,7 +97,20 @@ pub fn spawn_player(
             Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
             GravityScale(0.0),
             Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
-        )).id();
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                InteractionSensor,
+                Collider::circle(RADIUS * 2.0), 
+                Sensor, 
+                CollisionLayers::new (
+                    [Layer::InteractionSensor], // Does not collide with
+                    [Layer::Item] // Collides with 
+                ), 
+                Transform::default(),
+            ));
+        })
+        .id();
 
     // Spawn Health Bar for Player
     commands

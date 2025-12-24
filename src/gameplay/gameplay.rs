@@ -1,4 +1,5 @@
 use crate::gameplay::{
+    gizmos::gizmos::GizmosPlugin,
     inventory::inventory::InventoryPlugin,
     item::items::ItemPlugin,
     player::player::PlayerPlugin, 
@@ -15,6 +16,7 @@ impl Plugin for GameplayPlugin {
                 PlayerPlugin, 
                 ItemPlugin,
                 InventoryPlugin,
+                GizmosPlugin,
             )); 
     }
 }
