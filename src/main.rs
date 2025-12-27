@@ -36,6 +36,7 @@ fn setup(
         Transform::from_xyz(50.0, -100.0, 1.0),
         RigidBody::Dynamic,
         Collider::rectangle(30.0, 30.0),
+        GravityScale(0.0),
     ));
 
     // Platforms

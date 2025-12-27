@@ -103,7 +103,7 @@ pub struct Item {
 pub struct Loot; 
 
 // Loot close enough to player for pickup
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct DetectedLoot {
     pub items: Vec<Entity>, 
     pub index: usize, 
@@ -164,8 +164,30 @@ for i in 0..8 {
         }, 
         Transform::from_xyz(150.0, 150.0, 1.0),
     ))
-    .observe(loot_detection); 
+    .observe(loot_detection)
+    .observe(loot_undetected); 
 }
+
+commands.spawn((
+        Item {id: item_id.clone(), stack: 1},
+        Loot, 
+        RigidBody::Static, 
+        Collider::circle(LOOT_SIZE.x / 2.0),
+        CollisionEventsEnabled, // Enable collision events for this entity
+        CollisionLayers::new(
+            [Layer::Item], // Does not collide with
+            [Layer::InteractionSensor], // collides with
+        ),
+        Sensor, // Sends collision events but allows other bodies to pass through them
+        Sprite {
+            image: asset_server.load("icons/prototype_loot.png"), 
+            custom_size: Some(LOOT_SIZE),
+            ..default()
+        }, 
+        Transform::from_xyz(175.0, 150.0, 1.0),
+    ))
+    .observe(loot_detection)
+    .observe(loot_undetected); 
 }
 
 // EVENT SYSTEM FOR LOOT DETECTION
@@ -174,6 +196,7 @@ fn loot_detection (
     // over: On<CollisionEnd>,
     sensor_query: Query<&InteractionSensor>,
     loot_query: Query<&Item, With<Loot>>,
+    mut detected: Query<&mut DetectedLoot, With<Player>>, 
 ) {
     let loot = event.collider1;         // WANT TO CHECK FOR ITEM/LOOT ENTITY 
     let other_entity = event.collider2; // WANT TO CHECK FOR PLAYER'S SENSOR ENTITY 
@@ -181,6 +204,42 @@ fn loot_detection (
     // CHECK IF ENTITIES ARE LOOT AND PLAYER
     if sensor_query.contains(other_entity) && loot_query.contains(loot) {
         println!("EVENT-BASED DETECTION: {other_entity} is near item: {loot}"); 
+        match detected.single_mut() {
+            Ok(mut detected) => {
+                if !detected.items.contains(&loot) {
+                    detected.items.push(loot); 
+                    println!("{:?}", detected); 
+                }
+            },
+            Err(e) => {
+                println!("Error: {:?}. Occured trying to detect an item!", e); 
+            }, 
+        }
+    }
+}
+
+fn loot_undetected(
+    event: On<CollisionEnd>, 
+    sensor_query: Query<&InteractionSensor>, 
+    loot_query: Query<&Item, With<Loot>>, 
+    mut detected: Query<&mut DetectedLoot, With<Player>>, 
+) {
+    let loot = event.collider1; 
+    let other_entity = event.collider2; 
+
+    if sensor_query.contains(other_entity) && loot_query.contains(loot) {
+        println!("ITEMS: {loot} are no longer detected by {other_entity}"); 
+        match detected.single_mut() {
+            Ok(mut detected) => {
+                if detected.items.contains(&loot) {
+                    detected.items.retain(|&x| x != loot); 
+                    println!("{:?}", detected);
+                }
+            }
+            Err(e) => {
+                println!("Error: {:?}. Occured trying to undetect an item!", e); 
+            },
+        }
     }
 }
 
