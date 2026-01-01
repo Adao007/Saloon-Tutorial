@@ -4,6 +4,8 @@ use std::{collections::HashMap};
 use serde::{Deserialize, Serialize}; 
 
 // --- PROJECT CRATES ---
+use crate::gameplay::interactable::interactable::Interactable;
+use crate::gameplay::player::aim::MousePos;
 use crate::gameplay::player::player::Player;
 use crate::gameplay::player::setup::Layer;
 use crate::gameplay::player::setup::InteractionSensor;
@@ -98,11 +100,15 @@ pub struct Item {
     pub stack: u8, 
 }
 
-// Marker for floor items?
+// Marker for floor items
 #[derive(Component)]
 pub struct Loot; 
 
-// Loot close enough to player for pickup
+// Marker for Systems that require close distance between Player and Loot
+#[derive(Component)]
+pub struct PalpableLoot;
+
+// Detected Loot Array
 #[derive(Component, Debug)]
 pub struct DetectedLoot {
     pub items: Vec<Entity>, 
@@ -193,10 +199,10 @@ commands.spawn((
 // EVENT SYSTEM FOR LOOT DETECTION
 fn loot_detection (
     event: On<CollisionStart>, 
-    // over: On<CollisionEnd>,
     sensor_query: Query<&InteractionSensor>,
     loot_query: Query<&Item, With<Loot>>,
-    mut detected: Query<&mut DetectedLoot, With<Player>>, 
+    mut commands: Commands,
+    // mut detected: Query<&mut DetectedLoot, With<Player>>, 
 ) {
     let loot = event.collider1;         // WANT TO CHECK FOR ITEM/LOOT ENTITY 
     let other_entity = event.collider2; // WANT TO CHECK FOR PLAYER'S SENSOR ENTITY 
@@ -204,57 +210,56 @@ fn loot_detection (
     // CHECK IF ENTITIES ARE LOOT AND PLAYER
     if sensor_query.contains(other_entity) && loot_query.contains(loot) {
         println!("EVENT-BASED DETECTION: {other_entity} is near item: {loot}"); 
-        match detected.single_mut() {
-            Ok(mut detected) => {
-                if !detected.items.contains(&loot) {
-                    detected.items.push(loot); 
-                    println!("{:?}", detected); 
-                }
-            },
-            Err(e) => {
-                println!("Error: {:?}. Occured trying to detect an item!", e); 
-            }, 
-        }
+        commands.entity(loot).insert(Interactable::Loot);
     }
+
+    // if sensor_query.contains(other_entity) && loot_query.contains(loot) {
+    //     println!("EVENT-BASED DETECTION: {other_entity} is near item: {loot}"); 
+    //     match detected.single_mut() {
+    //         Ok(mut detected) => {
+    //             if !detected.items.contains(&loot) {
+    //                 detected.items.push(loot); 
+    //                 println!("{:?}", detected); 
+    //             }
+    //         },
+    //         Err(e) => {
+    //             println!("Error: {:?}. Occured trying to detect an item!", e); 
+    //         }, 
+    //     }
+    // }
 }
 
 fn loot_undetected(
     event: On<CollisionEnd>, 
     sensor_query: Query<&InteractionSensor>, 
     loot_query: Query<&Item, With<Loot>>, 
-    mut detected: Query<&mut DetectedLoot, With<Player>>, 
+    mut commands: Commands,
+    // mut detected: Query<&mut DetectedLoot, With<Player>>, 
 ) {
     let loot = event.collider1; 
     let other_entity = event.collider2; 
 
     if sensor_query.contains(other_entity) && loot_query.contains(loot) {
         println!("ITEMS: {loot} are no longer detected by {other_entity}"); 
-        match detected.single_mut() {
-            Ok(mut detected) => {
-                if detected.items.contains(&loot) {
-                    detected.items.retain(|&x| x != loot); 
-                    println!("{:?}", detected);
-                }
-            }
-            Err(e) => {
-                println!("Error: {:?}. Occured trying to undetect an item!", e); 
-            },
-        }
+        commands.entity(loot).remove::<Interactable>(); 
+        // match detected.single_mut() {
+        //     Ok(mut detected) => {
+        //         if detected.items.contains(&loot) {
+        //             detected.items.retain(|&x| x != loot); 
+        //             println!("{:?}", detected);
+        //         }
+        //     }
+        //     Err(e) => {
+        //         println!("Error: {:?}. Occured trying to undetect an item!", e); 
+        //     },
+        // }
     }
 }
 
-// EVENT SYSTEM FOR LOOT BECOMING UNDETECTED -- TODO!
+fn load_loot_tooltip(
+    palpable_query: Query<&Item, With<Interactable>>,  // Add loot info
+    mouse: Res<MousePos>,   // Check if mouse is hovering 
+    // Add to a Vector for cyclable item names? 
+) {
 
-// MESSAGING SYSTEM FOR LOOT DETECTION 
-// fn detect_loot (
-//     mut collision_reader: MessageReader<CollisionStart>, 
-//     mut collision_ended: MessageReader<CollisionEnd>, 
-//     mut detected_query: Query<&mut DetectedLoot, With<Player>>, // Filling your mind with the nearby items, hmm mmh 
-//     player_query: Query<Entity, With<Player>>, 
-//     item_query: Query<(), With<Loot>>, 
-// ) {
-//     for event in collision_reader.read() {
-//         // collider1 is the entity of the items
-//         println!("{} and {} started colliding", event.collider1, event.collider2); 
-//     }
-// }
+}

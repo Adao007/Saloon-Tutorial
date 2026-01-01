@@ -1,4 +1,5 @@
 use crate::gameplay::{
+    cursor::cursor::CursorPlugin,
     gizmos::gizmos::GizmosPlugin,
     inventory::inventory::InventoryPlugin,
     item::items::ItemPlugin,
@@ -13,6 +14,7 @@ impl Plugin for GameplayPlugin {
         app
             .add_plugins((
                 StagePlugin, 
+                CursorPlugin,
                 PlayerPlugin, 
                 ItemPlugin,
                 InventoryPlugin,

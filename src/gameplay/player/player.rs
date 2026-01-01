@@ -20,7 +20,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app
             .insert_resource(MousePos {
-                position: Vec2::new(0.0, 0.0),
+                position: Vec2::new(0.0, 0.0)
             })
             .add_systems(
             Startup,

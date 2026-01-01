@@ -3,7 +3,8 @@ use bevy::prelude::*;
 
 #[derive(Resource)]
 pub struct MousePos {
-    pub position: Vec2,
+    pub position: Vec2, // Holds the cursor position relative to the world position. 
+    // To get mouse screen position use: <Window> -> cursor_position(). 
 }
 
 #[derive(Component)]
@@ -20,6 +21,7 @@ pub fn get_mouse_position(
 ) {
     let (camera, camera_transform) = q_camera.single().unwrap();
     let window = q_window.single().unwrap();
+
 
     if let Some(world_pos) = window
         .cursor_position()
