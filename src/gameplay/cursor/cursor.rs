@@ -21,7 +21,7 @@ impl Plugin for CursorPlugin {
 struct CursorUi;
 
 #[derive(Component)]
-struct CursorText; // Marker for Text info near cursor
+pub struct CursorText; // Marker for Text info near cursor
 
 fn setup_cursor_ui(
     mut commands: Commands,

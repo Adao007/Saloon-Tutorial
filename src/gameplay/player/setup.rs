@@ -21,8 +21,7 @@ const RADIUS: f32 = 30.0;
 // --- BUNDLES --- 
 #[derive(Bundle)]
 struct PlayerBundle {
-    player: Player, 
-    detected_items: DetectedLoot,
+    player: Player,
     health: Health,
     inventory: Inventory,  
     mesh: Mesh2d,
@@ -64,10 +63,6 @@ pub fn spawn_player(
         .spawn((
             PlayerBundle {
                 player: Player,
-                detected_items: DetectedLoot {
-                    items: Vec::new(), 
-                    index: 0,
-                },
                 health: Health {
                     max: 100.0,
                     current: 100.0,

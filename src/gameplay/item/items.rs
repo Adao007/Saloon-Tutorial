@@ -4,11 +4,9 @@ use std::{collections::HashMap};
 use serde::{Deserialize, Serialize}; 
 
 // --- PROJECT CRATES ---
-use crate::gameplay::interactable::interactable::Interactable;
-use crate::gameplay::player::aim::MousePos;
-use crate::gameplay::player::player::Player;
 use crate::gameplay::player::setup::Layer;
 use crate::gameplay::player::setup::InteractionSensor;
+use crate::gameplay::cursor::cursor::CursorText;
 
 const LOOT_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 
@@ -16,8 +14,8 @@ pub struct ItemPlugin;
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App){
         app
-            .add_systems(Startup, (load_items, spawn_items));
-            // .add_systems(Update, detect_loot);
+            .add_systems(Startup, (load_items, spawn_items))
+            .add_systems(Update, (load_loot_tooltip, cycle_loot_tooltip));
     }
 }
 
@@ -93,7 +91,7 @@ pub struct ItemDefinition {
     icon: String, 
 }
 
-// Contains necessary info for gameplay
+// Contains necessary item info for lookups
 #[derive(Clone, Component, Debug, Deserialize, Serialize)]
 pub struct Item {
     pub id: String, 
@@ -107,13 +105,6 @@ pub struct Loot;
 // Marker for Systems that require close distance between Player and Loot
 #[derive(Component)]
 pub struct PalpableLoot;
-
-// Detected Loot Array
-#[derive(Component, Debug)]
-pub struct DetectedLoot {
-    pub items: Vec<Entity>, 
-    pub index: usize, 
-}
 
 // --- RESOURCES --- 
 #[derive(Default, Resource)]
@@ -129,6 +120,13 @@ impl ItemRegistry {
     fn get(&mut self, id: &str) -> Option<&ItemDefinition> {
         self.get(id)
     }
+}
+
+// Detected Loot Array
+#[derive(Resource, Debug)]
+pub struct DetectedLoot {
+    pub items: Vec<Entity>, 
+    pub index: usize, 
 }
 
 // --- SYSTEMS --- 
@@ -202,7 +200,7 @@ fn loot_detection (
     sensor_query: Query<&InteractionSensor>,
     loot_query: Query<&Item, With<Loot>>,
     mut commands: Commands,
-    // mut detected: Query<&mut DetectedLoot, With<Player>>, 
+    mut detected: ResMut<DetectedLoot>, 
 ) {
     let loot = event.collider1;         // WANT TO CHECK FOR ITEM/LOOT ENTITY 
     let other_entity = event.collider2; // WANT TO CHECK FOR PLAYER'S SENSOR ENTITY 
@@ -210,23 +208,11 @@ fn loot_detection (
     // CHECK IF ENTITIES ARE LOOT AND PLAYER
     if sensor_query.contains(other_entity) && loot_query.contains(loot) {
         println!("EVENT-BASED DETECTION: {other_entity} is near item: {loot}"); 
-        commands.entity(loot).insert(Interactable::Loot);
+        commands.entity(loot).insert(PalpableLoot);
+        if !detected.items.contains(&loot) {
+            detected.items.push(loot); 
+        }
     }
-
-    // if sensor_query.contains(other_entity) && loot_query.contains(loot) {
-    //     println!("EVENT-BASED DETECTION: {other_entity} is near item: {loot}"); 
-    //     match detected.single_mut() {
-    //         Ok(mut detected) => {
-    //             if !detected.items.contains(&loot) {
-    //                 detected.items.push(loot); 
-    //                 println!("{:?}", detected); 
-    //             }
-    //         },
-    //         Err(e) => {
-    //             println!("Error: {:?}. Occured trying to detect an item!", e); 
-    //         }, 
-    //     }
-    // }
 }
 
 fn loot_undetected(
@@ -234,32 +220,53 @@ fn loot_undetected(
     sensor_query: Query<&InteractionSensor>, 
     loot_query: Query<&Item, With<Loot>>, 
     mut commands: Commands,
-    // mut detected: Query<&mut DetectedLoot, With<Player>>, 
+    mut detected: ResMut<DetectedLoot>,
 ) {
     let loot = event.collider1; 
     let other_entity = event.collider2; 
 
     if sensor_query.contains(other_entity) && loot_query.contains(loot) {
-        println!("ITEMS: {loot} are no longer detected by {other_entity}"); 
-        commands.entity(loot).remove::<Interactable>(); 
-        // match detected.single_mut() {
-        //     Ok(mut detected) => {
-        //         if detected.items.contains(&loot) {
-        //             detected.items.retain(|&x| x != loot); 
-        //             println!("{:?}", detected);
-        //         }
-        //     }
-        //     Err(e) => {
-        //         println!("Error: {:?}. Occured trying to undetect an item!", e); 
-        //     },
-        // }
+        commands.entity(loot).remove::<PalpableLoot>(); 
+        if detected.items.contains(&loot) {
+            detected.items.retain(|&x| x != loot); 
+            println!("{:?}", detected);
+        }
+        println!("ITEMS: {loot} is no longer detected by {other_entity}"); 
     }
 }
 
+// TOOLTIP TODO: If multiple interactions exist how does it change? Moreover, how does it change back to blank?
+// Move this system to interactable! 
 fn load_loot_tooltip(
-    palpable_query: Query<&Item, With<Interactable>>,  // Add loot info
-    mouse: Res<MousePos>,   // Check if mouse is hovering 
-    // Add to a Vector for cyclable item names? 
+    detected: Res<DetectedLoot>,  // Add loot info// Add to a Vector for cyclable item names? 
+    loot_query: Query<&Item, With<PalpableLoot>>,
+    mut ui_query: Query<&mut Text, With<CursorText>>, 
 ) {
+    if detected.items.is_empty() {
+        return; 
+    }
 
+    let Some(entity) = detected.items.get(detected.index) else {
+        return;
+    }; 
+
+    let Ok(loot) = loot_query.get(*entity) else { return ;};
+
+    for mut text in &mut ui_query {
+        text.0 = loot.id.clone();
+    }
+}
+
+fn cycle_loot_tooltip(
+    mut detected: ResMut<DetectedLoot>, 
+    keyboard: Res<ButtonInput<KeyCode>>, 
+) {
+    if detected.items.is_empty() {
+        return;
+    }
+
+    if keyboard.just_pressed(KeyCode::Tab) {
+        detected.index = (detected.index + 1) % detected.items.len();
+        println!("Cycled! The current entity is: {:?}", detected.items.get(detected.index)); 
+    }
 }

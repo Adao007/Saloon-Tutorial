@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::gameplay::item::items::DetectedLoot;
 use crate::gameplay::player::aim::MousePos;
 use crate::gameplay::player::setup::spawn_player;
 use crate::gameplay::player::aim::get_mouse_position;
@@ -21,6 +22,10 @@ impl Plugin for PlayerPlugin {
         app
             .insert_resource(MousePos {
                 position: Vec2::new(0.0, 0.0)
+            })
+            .insert_resource(DetectedLoot {
+                items: Vec::new(),
+                index: 0,
             })
             .add_systems(
             Startup,
