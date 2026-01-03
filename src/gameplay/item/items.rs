@@ -235,7 +235,9 @@ fn loot_undetected(
     }
 }
 
-// TOOLTIP TODO: If multiple interactions exist how does it change? Moreover, how does it change back to blank?
+// TOOLTIP TODO: 
+// If multiple interactions exist how does it change? Moreover, how does it change back to blank?
+// Ensure that tooltip only works when hovering interactable
 // Move this system to interactable! 
 fn load_loot_tooltip(
     detected: Res<DetectedLoot>,  // Add loot info// Add to a Vector for cyclable item names? 
