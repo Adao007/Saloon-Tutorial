@@ -1,4 +1,4 @@
-A programming components for the I15 project. 
+Programming components for the I15 project. 
 
 # TODO
 player/stamina && player/movement
